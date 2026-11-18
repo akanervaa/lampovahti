@@ -1,0 +1,31 @@
+# Lämpövahdin omat Kconfig-asetukset.
+#
+# Oletusarvot ovat oikean raudan arvoja (datalehti, DESIGN.md). Simulaattorille ne ohitetaan
+# prj.conf-tiedostossa, koska Wokwissa Zephyrin aika ja simuloitu anturi eivät kulje samaa tahtia
+# (DESIGN.md, avoimet kysymykset).
+
+mainmenu "Lampovahti"
+
+# Zephyrin omat asetukset ladataan ensin.
+source "Kconfig.zephyr"
+
+menu "Lampovahti"
+
+config LAMPO_SENSOR_PERIOD_MS
+	int "Anturin lukujakso (ms)"
+	default 1000
+	range 100 60000
+	help
+	  Kuinka usein sensor-thread lukee lämpötilan (F1). Jakso pidetään
+	  absoluuttisella ajalla, joten viive ei kerry.
+
+config LAMPO_DRDY_TIMEOUT_MS
+	int "Enimmäisodotus DRDY:lle ennen anturivikaa (ms)"
+	default 2000
+	range 100 60000
+	help
+	  Jos anturin DRDY-bitti ei nouse tässä ajassa, luku epäonnistuu ja
+	  siitä ilmoitetaan anturivikana (F7). Datalehti: "give up after
+	  about 2 s".
+
+endmenu

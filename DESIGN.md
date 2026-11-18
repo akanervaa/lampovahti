@@ -396,7 +396,20 @@ lampovahti/          oma git-repo (siirretty kurssin reposta 2026-11-18)
 | 0 | ✓ 2026-11-18 | ks. avoimet kysymykset (watchdog, ajoitus) |
 | 1 | ✓ 2026-11-18 | Wokwi: `<inf> main: Lämpövahdin runko käynnistyi`; debug-rivi ei näy (taso info) |
 | 2 | ✓ 2026-11-18 | `scripts/test.ps1`: `100% tests passed out of 1`; testi rikottu tahallaan → `Expected 4 Was 5` |
-| 3 | kesken | ✓ `mys1_conv` TDD:llä (6 testiä + kaikki 65 536 syötettä). ✓ Anturi kytketty, Wokwi: `MYS-1 vastaa: WHO_AM_I 0xa7`. Jäljellä: sensor-thread, joka lukee lämpötilan lokiin. |
+| 3 | ✓ 2026-11-18 | `mys1_conv` TDD:llä (6 testiä + kaikki 65 536 syötettä). Anturi kytketty (WHO_AM_I 0xa7). Sensor-thread lukee lämpötilan lokiin Wokwissa yli 4 minuutin ajon ilman yhtään anturivikaa (`T = 22.59 C` ... MYS-1:n 8 arvon sarja toistuu). |
+
+**Päätös: ajat sovelluksen omina Kconfig-symboleina** (vaihe 3, `firmware/Kconfig`)
+- **Miksi:** Wokwissa Zephyrin aika ja simuloitu anturi eivät kulje samaa tahtia (avoimet
+  kysymykset), joten oikean raudan ajat eivät toimi simulaattorissa. Kconfigissa oletusarvo on
+  oikean raudan arvo, ja `prj.conf` ohittaa sen Wokwille. Lopullinen arvo näkyy `.config`:ssa.
+- **Arvot:** `CONFIG_LAMPO_SENSOR_PERIOD_MS` = 1000 (oletus). `CONFIG_LAMPO_DRDY_TIMEOUT_MS`:
+  oletus 2000 (datalehti: näyte 500 ms välein, aikakatkaisu 4×), Wokwi **15000** (mitattu väli
+  noin 7000 ms, ensimmäinen näyte 7771 ms → noin 2× marginaali). 9000 harkittiin: nopeampi
+  vikailmoitus, mutta vain noin 16 % marginaali ensimmäiseen näytteeseen.
+- **Hylätty:** `#define` otsikkotiedostossa (arvon muutos vaatisi koodin muokkausta, eikä eri
+  ympäristöille voisi antaa eri arvoja ilman `#ifdef`-viidakkoa).
+- **Myöhemmin:** samat periaatteet `control`-threadin aikoihin (hiljaisuusraja, hälytysviive).
+  Ydin saa ne parametreina, koska ydin ei saa riippua Zephyrin Kconfigista.
 
 **Opittu (vaihe 3):** uusi overlay- tai binding-tiedosto vaatii **puhtaan käännöksen**
 (`scripts/build.ps1 -Clean`). Zephyr päättää mukaan otettavat tiedostot vain build-kansiota
@@ -438,4 +451,5 @@ edellistä `zephyr.elf`-tiedostoa, joten tuloste on vanha.
 | F3: mikä on "sallittu alue" ja "liian kauan"? | Tavoite ± 2 °C, yhtäjaksoisesti 30 s | Ehdotus, päätetään vaiheessa 2 |
 | Voiko MYS-1:n lämpötilaa muuttaa Wokwissa hälytysten testaamiseksi? | Lämpötila vaihtelee itsestään hieman (22.6–22.9 °C lab 3:ssa). Suurta muutosta ei vielä osata tehdä; hälytykset voi testata yksikkötesteillä. | Osittain selvitetty |
 | Tukeeko Wokwi RP2040:n watchdogia (F9)? | **Osittain.** Kokeilu `spikes/watchdog` (2026-11-18): watchdog käynnistyy (CTRL-rekisterin ENABLE = 1) ja laskuri TIME laskee nollaan ja pyörähtää ympäri, mutta **piiri ei käynnisty uudelleen**. Koodimme on siis oikein; Wokwi ei emuloi uudelleenkäynnistystä. Vaihtoehdot vaiheeseen 8: raudallinen watchdog suunnitelman mukaan (toimisi oikealla Picolla, ei testattavissa Wokwissa) ja/tai Zephyrin task watchdog + ohjelmallinen uudelleenkäynnistys (pitää kokeilla, toimiiko Wokwissa). | Selvitetty, päätös vaiheessa 8 |
+| Kulkeeko Zephyrin aika samaa tahtia kuin simuloitu anturi? | **Ei.** Kokeilu vaiheessa 3 (kopio, ei commitoitu): MYS-1 tuottaa näytteen 500 ms välein simulaattorin ajassa (datalehti ja piirin lähdekoodi), mutta Zephyrin `k_uptime_get()` näyttää DRDY:n nousevan noin **7 s** välein. Lukemat tulevat järjestyksessä, joten näytteitä ei hukata. Zephyrin kello näyttää käyvän Wokwissa monta kertaa nopeammin kuin simuloidut oheislaitteet. Lab 3 (Pico SDK, ei Zephyr) lukee samaa anturia oikeassa tahdissa. **Vaikutus:** suunnitelman ajat (1 s jakso, 2.5 s hiljaisuus, 30 s hälytys) eivät päde Wokwissa sellaisinaan. | Avoin: päätös vaiheessa 3 |
 | Onko Zephyrin ajoitus Wokwin Picolla tarkka? | **Ei täysin.** Kokeilu `spikes/watchdog`: `k_msleep(1000)` kestää 1154 ms ja `k_msleep(250)` 404 ms, eli uni venyy noin **154 ms** kestosta riippumatta. Mitattu ilman printk:ta mittausvälissä, joten hypoteesi "printk vie ajan" kumoutui. **Vaikutus:** `decide()` vertaa aikaleimoja (`now_ms`), joten hälytyksen 30 s ja anturin 2.5 s hiljaisuus mitataan oikein. Sensorin jakso venyy 1.15 sekuntiin, mikä ei haittaa; vaiheessa 3 jakso tehdään ajastimella tai absoluuttisella ajalla, jotta viive ei kerry. | Selvitetty |
