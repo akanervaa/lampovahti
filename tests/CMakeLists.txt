@@ -30,11 +30,16 @@ enable_testing()
 # Sama lähdekoodi, jonka firmware kääntää Arm-kääntäjällä. Täällä se käännetään PC:n gcc:llä.
 add_library(core STATIC
     ../core/mys1_conv.c
+    ../core/controller.c
 )
 target_include_directories(core PUBLIC ../core)
 
 add_executable(test_mys1_conv test_mys1_conv.c)
 target_link_libraries(test_mys1_conv PRIVATE core unity)
 add_test(NAME mys1_conv COMMAND test_mys1_conv)
+
+add_executable(test_controller test_controller.c)
+target_link_libraries(test_controller PRIVATE core unity)
+add_test(NAME controller COMMAND test_controller)
 
 
