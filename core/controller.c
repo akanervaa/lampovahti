@@ -7,8 +7,6 @@
  * Vika kirjoitetaan MUISTIIN (s->heater_on), ei vain vastaukseen: muuten muisti sanoisi
  * yhä "päällä", ja kun anturi palaa kaistan sisältä, hystereesi sytyttäisi lämmittimen
  * itsestään. Vastaus otetaan aina muistista, joten ne eivät voi olla eri mieltä.
- *
- * Täytä aukot ____: hälytyksen syöte jokaisessa haarassa (päätit nämä jo) ja vastaus.
  */
 #include "controller.h"
 #include "hysteresis.h"
@@ -26,6 +24,9 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
     case EV_SAMPLE: {
         /* Uskottavuus ensin: hystereesi ei saa toimia roskan perusteella. */
         bool ok = plaus_ok(ev.centi, s->have_prev, s->prev_centi);
+
+        history_add(&s->history, (struct history_entry){
+            .t_ms = now_ms, .centi = ev.centi, .kind = ok ? HIST_OK : HIST_REJECTED });
 
         /* Edellinen lukema päivitetään AINA, myös hylätyllä (plausibility.h). */
         s->prev_centi = ev.centi;
@@ -51,6 +52,8 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
     case EV_SENSOR_FAULT:
         s->heater_on = false;       /* F7 */
         ain = ALARM_IN_FAULT;
+        history_add(&s->history, (struct history_entry){
+            .t_ms = now_ms, .centi = 0, .kind = HIST_FAULT });
         break;
     }
 

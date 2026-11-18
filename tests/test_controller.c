@@ -124,6 +124,21 @@ static void test_implausible_reading_alarms_immediately(void)
     TEST_ASSERT_EQUAL(true,  alarm_after_sample(51198, 1000)); /* bittivirhe */
 }
 
+/* F5: historiaan päätyvät kaikki tapahtumat, myös hylätyt ja viat. */
+static void test_history_records_everything(void)
+{
+    alarm_after_sample(2270, 1000);
+    alarm_after_sample(51198, 2000);                /* hylätään */
+    alarm_after_fault(3000);
+
+    TEST_ASSERT_EQUAL_size_t(3, history_count(&s.history));
+    TEST_ASSERT_EQUAL(HIST_OK,       history_get(&s.history, 0).kind);
+    TEST_ASSERT_EQUAL(HIST_REJECTED, history_get(&s.history, 1).kind);
+    TEST_ASSERT_EQUAL_INT32(51198,   history_get(&s.history, 1).centi);
+    TEST_ASSERT_EQUAL(HIST_FAULT,    history_get(&s.history, 2).kind);
+    TEST_ASSERT_EQUAL_UINT32(3000,   history_get(&s.history, 2).t_ms);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -136,5 +151,6 @@ int main(void)
     RUN_TEST(test_alarm_out_of_range_for_delay);
     RUN_TEST(test_sensor_fault_alarms_immediately);
     RUN_TEST(test_implausible_reading_alarms_immediately);
+    RUN_TEST(test_history_records_everything);
     return UNITY_END();
 }

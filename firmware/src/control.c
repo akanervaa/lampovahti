@@ -71,10 +71,11 @@ static void control_thread(void *p1, void *p2, void *p3)
         return;
     }
 
-    /* K2: Tila on control_threadin PAIKALLINEN muuttuja eikä globaali. Mitä etua siitä on?
-     *     (DESIGN.md 4.2: "yksi kirjoittaja")
-     *     Vastaus: No just se, että sillä on vaan yksi kirjoittaja ja se on paikallinen, niin ei tarvita lukituksia tai muuta monimutkaista synkronointia. */
-    struct state st = {
+    /* Tila on näkyvissä vain tässä funktiossa: yksi kirjoittaja, joten lukkoja ei tarvita
+     * (DESIGN.md 4.2). static: tila on noin 0.5 kt (historia 32 riviä), joten se ei mahdu
+     * threadin 1024 tavun pinoon. static sijoittaa sen RAMiin käännösaikana; näkyvyys
+     * pysyy silti vain tässä funktiossa. Alustus tehdään kerran, ei jokaisella kutsulla. */
+    static struct state st = {
         .target_centi = TARGET_CENTI,
         .band_centi   = CONFIG_LAMPO_HYST_BAND_CENTI,
         .alarm_range_centi = CONFIG_LAMPO_ALARM_RANGE_CENTI,

@@ -6,7 +6,8 @@
  *
  * Vaihe 5: lukema tarkistetaan ensin (plausibility.h, F8), sitten lämmitin ohjataan
  * hystereesillä (hysteresis.h). Anturivika ja mahdoton lukema sammuttavat lämmittimen (F7).
- * Hälytys (alarm.h, F3) saa jokaisesta tapahtumasta tiedon: alueella, ulkona vai vika. Tulossa: uskottavuus, hälytys, historia.
+ * Hälytys (alarm.h, F3) saa jokaisesta tapahtumasta tiedon: alueella, ulkona vai vika.
+ * Jokainen tapahtuma kirjataan historiaan (history.h, F5), myös hylätyt ja viat. Tulossa: uskottavuus, hälytys, historia.
  */
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
@@ -16,6 +17,7 @@
 
 #include "alarm.h"
 #include "event.h"
+#include "history.h"
 
 /* Muistivihko: mitä vastaus riippuu, mutta mikä ei ole tapahtumassa.
  *
@@ -34,6 +36,7 @@ struct state {
     bool have_prev;         /* onko edellistä lukemaa (ensimmäisellä lukemalla ei ole) */
     int32_t prev_centi;     /* edellinen LUKEMA, myös hylätty (plausibility.h) */
     struct alarm alarm;     /* hälytyksen tila (alarm.h) */
+    struct history history; /* viimeisimmät lukemat shellille (history.h, F5) */
 };
 
 /* Vastauslappu kuorelle. */

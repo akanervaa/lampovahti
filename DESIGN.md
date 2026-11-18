@@ -398,6 +398,7 @@ lampovahti/          oma git-repo (siirretty kurssin reposta 2026-11-18)
 | 2 | ✓ 2026-11-18 | `scripts/test.ps1`: `100% tests passed out of 1`; testi rikottu tahallaan → `Expected 4 Was 5` |
 | 3 | ✓ 2026-11-18 | `mys1_conv` TDD:llä (6 testiä + kaikki 65 536 syötettä). Anturi kytketty (WHO_AM_I 0xa7). Sensor-thread lukee lämpötilan lokiin Wokwissa yli 4 minuutin ajon ilman yhtään anturivikaa (`T = 22.59 C` ... MYS-1:n 8 arvon sarja toistuu). |
 | 4 | ✓ 2026-11-18 | `decide()`-tynkä + 4 PC-testiä; rajatapaustesti kaatuu, kun `<` vaihdetaan `<=`:ksi. Wokwissa anturi → postilaatikko → control → LED: `T = 22.59 C` → `lammitin PAALLE`, `T = 22.70 C` → `lammitin POIS`. LED räpsyy tavoitteen ympärillä (ei hystereesiä, tarkoituksella). |
+| 5 | ✓ 2026-11-18 | Ydin TDD:llä: hystereesi, uskottavuus, hälytys (myös laskurin pyörähdys), historia; jokainen testi nähty kaatuvan. Wokwissa lämmitin vaihtaa vain kaistan reunoilla (22.50 päälle, 22.93 pois); hälytys todettu tilapäisellä ± 0.10 °C:n alueella. Historia näyttää vain viimeiset 32 tapahtumaa: harvinaisten tapahtumien oma rengas on myöhempi parannus. |
 
 **Päätös: ajat sovelluksen omina Kconfig-symboleina** (vaihe 3, `firmware/Kconfig`)
 - **Miksi:** Wokwissa Zephyrin aika ja simuloitu anturi eivät kulje samaa tahtia (avoimet

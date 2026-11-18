@@ -34,6 +34,7 @@ add_library(core STATIC
     ../core/hysteresis.c
     ../core/plausibility.c
     ../core/alarm.c
+    ../core/history.c
 )
 target_include_directories(core PUBLIC ../core)
 
@@ -56,3 +57,7 @@ add_test(NAME plausibility COMMAND test_plausibility)
 add_executable(test_alarm test_alarm.c)
 target_link_libraries(test_alarm PRIVATE core unity)
 add_test(NAME alarm COMMAND test_alarm)
+
+add_executable(test_history test_history.c)
+target_link_libraries(test_history PRIVATE core unity)
+add_test(NAME history COMMAND test_history)

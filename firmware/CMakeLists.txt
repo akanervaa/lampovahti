@@ -17,5 +17,6 @@ target_sources(app PRIVATE
     ../core/hysteresis.c
     ../core/plausibility.c
     ../core/alarm.c
+    ../core/history.c
 )
 target_include_directories(app PRIVATE ../core)
