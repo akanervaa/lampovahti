@@ -33,6 +33,7 @@ add_library(core STATIC
     ../core/controller.c
     ../core/hysteresis.c
     ../core/plausibility.c
+    ../core/alarm.c
 )
 target_include_directories(core PUBLIC ../core)
 
@@ -51,3 +52,7 @@ add_test(NAME hysteresis COMMAND test_hysteresis)
 add_executable(test_plausibility test_plausibility.c)
 target_link_libraries(test_plausibility PRIVATE core unity)
 add_test(NAME plausibility COMMAND test_plausibility)
+
+add_executable(test_alarm test_alarm.c)
+target_link_libraries(test_alarm PRIVATE core unity)
+add_test(NAME alarm COMMAND test_alarm)
