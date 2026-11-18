@@ -4,6 +4,7 @@
  * vastaa laudan nimeä (rpi_pico).
  *
  *   GP4 = SDA, GP5 = SCL   MYS-1-anturi, I2C-osoite 0x48
+ *   GP15                   lämmitin-LED (aktiivinen ylhäällä)
  */
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -35,6 +36,15 @@
 
 			/* (2) I2C-osoite. 7-bittinen vai 8-bittinen muoto? (lesson 96) */
 			reg = <0x48>;
+		};
+	};
+
+	/* Lämmitin-LED. gpio-leds on Zephyrin valmis binding "LEDit GPIO-pinneissä".
+	 * Label heater_led on nimi, jolla control.c löytää sen (DT_NODELABEL(heater_led)). */
+	heater_leds {
+		compatible = "gpio-leds";
+		heater_led: heater_led {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

@@ -7,10 +7,12 @@ target_sources(app PRIVATE
     src/main.c
     src/mys1.c
     src/sensor.c
+    src/control.c
 )
 
 # Ydin (core/): sama puhdas C, joka testataan PC:llä (tests/). Tässä se käännetään Arm-kääntäjällä.
 target_sources(app PRIVATE
     ../core/mys1_conv.c
+    ../core/controller.c
 )
 target_include_directories(app PRIVATE ../core)

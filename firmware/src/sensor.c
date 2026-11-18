@@ -1,11 +1,12 @@
 /* sensor.c: sensor-thread (DESIGN.md 4.1). Lukee lämpötilan jaksollisesti.
  *
- * Tällä hetkellä lämpötila kirjataan lokiin. Myöhemmin (vaihe 4) lukema lähetetään
- * control-threadin postilaatikkoon (EV_SAMPLE) ja vika viestinä EV_SENSOR_FAULT.
+ * Lukema kirjataan lokiin ja lähetetään control-threadin postilaatikkoon (EV_SAMPLE),
+ * vika viestinä EV_SENSOR_FAULT.
  */
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "control.h"
 #include "mys1.h"
 
 LOG_MODULE_REGISTER(sensor, LOG_LEVEL_INF);
@@ -32,13 +33,20 @@ static void sensor_thread(void *p1, void *p2, void *p3)
 
     while (1) {
         int32_t centi;
+        struct event ev;
         rc = mys1_read_centi(&centi);
         if (rc == 0) {
             /* Etumerkki erikseen: -0.50 °C = -50 sadasosaa, ja -50 / 100 = 0 hävittäisi miinuksen. */
             int32_t mag = (centi < 0) ? -centi : centi;
             LOG_INF("T = %s%d.%02d C", (centi < 0) ? "-" : "", (int)(mag / 100), (int)(mag % 100));
+            ev = (struct event){ .type = EV_SAMPLE, .centi = centi };
         } else {
             LOG_ERR("anturivika (%d)", rc);
+            ev = (struct event){ .type = EV_SENSOR_FAULT, .centi = 0 };   /* 0: sovittu event.h:ssa */
+        }
+
+        if (control_post(ev) != 0) {
+            LOG_WRN("postilaatikko taynna, tapahtuma pudotettu");
         }
 
         /* (4) Seuraava herätys: yksi jakso edellisestä tavoitteesta. Mikä Kconfig-symboli? */

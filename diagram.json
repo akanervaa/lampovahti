@@ -17,6 +17,25 @@
       "left": -121.18,
       "attrs": {},
       "rotate": 270
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_heater",
+      "top": 195.95,
+      "left": -76.8,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_heater",
+      "top": 140,
+      "left": -130,
+      "attrs": {
+        "color": "red",
+        "label": "Lämmitin"
+      }
     }
   ],
   "connections": [
@@ -71,6 +90,24 @@
         "h70.4",
         "v26.21"
       ]
+    ],
+    [
+      "pico:GP15",
+      "r_heater:2",
+      "orange",
+      []
+    ],
+    [
+      "r_heater:1",
+      "led_heater:A",
+      "orange",
+      []
+    ],
+    [
+      "led_heater:C",
+      "pico:GND.4",
+      "black",
+      []
     ]
   ],
   "dependencies": {}
