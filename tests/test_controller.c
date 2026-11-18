@@ -66,11 +66,30 @@ static void test_after_fault_heater_stays_off_in_band(void)
     TEST_ASSERT_EQUAL(false, sample(2270));
 }
 
+/* F8: yksi bittivirhe kesken lämmityksen. */
+static void test_glitch_turns_heater_off_then_recovers(void)
+{
+    TEST_ASSERT_EQUAL(true,  sample(2200));   /* kylmä */
+    TEST_ASSERT_EQUAL(false, sample(51198));  /* bittivirhe +511.98 */
+    TEST_ASSERT_EQUAL(false, sample(2200));   /* paluu takaisin: ? */
+    TEST_ASSERT_EQUAL(true,  sample(2200));   /* ? */
+}
+
+/* F8: oikea äkillinen muutos. Hylätään kerran, sitten hyväksytään. */
+static void test_real_jump_accepted_after_one_reading(void)
+{
+    TEST_ASSERT_EQUAL(true,  sample(2000));   /* 20.00, kylmä */
+    TEST_ASSERT_EQUAL(false, sample(1500));   /* 15.00: ? */
+    TEST_ASSERT_EQUAL(true,  sample(1510));   /* ? */
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_hysteresis_remembers_direction);
     RUN_TEST(test_sensor_fault_turns_heater_off);
     RUN_TEST(test_after_fault_heater_stays_off_in_band);
+    RUN_TEST(test_glitch_turns_heater_off_then_recovers);
+    RUN_TEST(test_real_jump_accepted_after_one_reading);
     return UNITY_END();
 }

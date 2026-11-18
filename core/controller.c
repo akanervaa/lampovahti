@@ -8,6 +8,7 @@
  */
 #include "controller.h"
 #include "hysteresis.h"
+#include "plausibility.h"
 
 struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
 {
@@ -16,10 +17,22 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
     (void)now_ms;   /* aikaa tarvitaan vasta hälytyksessä (F3) */
 
     switch (ev.type) {
-    case EV_SAMPLE:
-        s->heater_on = hysteresis_heater(s->heater_on, ev.centi,
-                                         s->target_centi, s->band_centi);
+    case EV_SAMPLE: {
+        /* Uskottavuus ensin: hystereesi ei saa toimia roskan perusteella. */
+        bool ok = plaus_ok(ev.centi, s->have_prev, s->prev_centi);
+
+        /* Edellinen lukema päivitetään AINA, myös hylätyllä (plausibility.h). */
+        s->prev_centi = ev.centi;
+        s->have_prev  = true;
+
+        if (ok) {
+            s->heater_on = hysteresis_heater(s->heater_on, ev.centi,
+                                             s->target_centi, s->band_centi);
+        } else {
+            s->heater_on = false;    /* F8: mahdoton lukema käsitellään kuin anturivika */
+        }
         break;
+    }
 
     case EV_SENSOR_FAULT:
         /* K1: Miksi vika kirjoitetaan MUISTIIN (s->heater_on) eikä pelkästään vastaukseen

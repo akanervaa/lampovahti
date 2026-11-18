@@ -4,8 +4,8 @@
  * Se ei koske rautaan eikä kysy aikaa itse: aika tulee parametrina, jotta testi voi
  * syöttää minkä tahansa ajan. Puhdasta C:tä, testataan PC:llä.
  *
- * Vaihe 5: lämmitin ohjataan hystereesillä (hysteresis.h). Anturivika sammuttaa
- * lämmittimen (F7). Tulossa: uskottavuus, hälytys, historia.
+ * Vaihe 5: lukema tarkistetaan ensin (plausibility.h, F8), sitten lämmitin ohjataan
+ * hystereesillä (hysteresis.h). Anturivika ja mahdoton lukema sammuttavat lämmittimen (F7). Tulossa: uskottavuus, hälytys, historia.
  */
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
@@ -28,6 +28,8 @@ struct state {
 
     /* muisti */
     bool heater_on;         /* lämmittimen tila edellisen päätöksen jälkeen */
+    bool have_prev;         /* onko edellistä lukemaa (ensimmäisellä lukemalla ei ole) */
+    int32_t prev_centi;     /* edellinen LUKEMA, myös hylätty (plausibility.h) */
 };
 
 /* Vastauslappu kuorelle. */

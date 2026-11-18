@@ -32,6 +32,7 @@ add_library(core STATIC
     ../core/mys1_conv.c
     ../core/controller.c
     ../core/hysteresis.c
+    ../core/plausibility.c
 )
 target_include_directories(core PUBLIC ../core)
 
@@ -47,4 +48,6 @@ add_executable(test_hysteresis test_hysteresis.c)
 target_link_libraries(test_hysteresis PRIVATE core unity)
 add_test(NAME hysteresis COMMAND test_hysteresis)
 
-
+add_executable(test_plausibility test_plausibility.c)
+target_link_libraries(test_plausibility PRIVATE core unity)
+add_test(NAME plausibility COMMAND test_plausibility)
