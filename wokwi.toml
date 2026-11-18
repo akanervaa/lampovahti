@@ -1,0 +1,6 @@
+# Wokwi-simulaattorin asetukset. Kytkennät ovat diagram.json-tiedostossa.
+[wokwi]
+version = 1
+firmware = 'firmware/build/zephyr/zephyr.elf'
+elf = 'firmware/build/zephyr/zephyr.elf'
+gdbServerPort = 3333

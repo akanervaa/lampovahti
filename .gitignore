@@ -1,0 +1,10 @@
+# Käännöstulokset syntyvät lähdekoodista, joten ne eivät kuulu versionhallintaan.
+build/
+**/build/
+
+# Editorin ja käyttöjärjestelmän omat tiedostot
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+*.swp
+Thumbs.db
+.DS_Store
