@@ -1,0 +1,40 @@
+/* boards/rpi_pico.overlay: Lämpövahdin laitteet Picolla.
+ *
+ * Tämä on AINOA tiedosto, joka tietää pinnit (N2). Build lukee sen automaattisesti, koska nimi
+ * vastaa laudan nimeä (rpi_pico).
+ *
+ *   GP4 = SDA, GP5 = SCL   MYS-1-anturi, I2C-osoite 0x48
+ */
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/* P5: Zephyrin rautainen I2C-ajuri ei saa vastausta Wokwissa (aikakatkaisu, error -116).
+ * Siksi rautainen väylä kytketään pois ja samat pinnit ohjataan ohjelmallisella gpio-i2c-ajurilla.
+ * Oikealla Picolla palattaisiin &i2c0:aan muuttamalla vain tätä tiedostoa. */
+&i2c0 {
+	status = "disabled";
+};
+
+/ {
+	i2c_bb: i2c-gpio {
+		compatible = "gpio-i2c";
+		status = "okay";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		sda-gpios = <&gpio0 4 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		scl-gpios = <&gpio0 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Anturi on väylän "lapsi": se on kytketty juuri tähän väylään.
+		 * Label "mys1" on nimi, jolla C-koodi löytää solmun (DT_NODELABEL(mys1)). */
+		mys1: mys1@48 {
+			/* (1) Laitetyyppi: sama merkkijono kuin binding-tiedoston compatible-rivillä
+			 *     (firmware/dts/bindings/sensor/vnd,mystery-sensor.yaml).
+			 *     Mitä tapahtuisi, jos tämä rivi puuttuisi? (lesson 94) */
+			compatible = "vnd,mystery-sensor";
+
+			/* (2) I2C-osoite. 7-bittinen vai 8-bittinen muoto? (lesson 96) */
+			reg = <0x48>;
+		};
+	};
+};

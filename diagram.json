@@ -3,11 +3,75 @@
   "author": "Embedded Course",
   "editor": "wokwi",
   "parts": [
-    { "type": "wokwi-pi-pico", "id": "pico", "top": 0, "left": 0, "attrs": {  } }
+    {
+      "type": "wokwi-pi-pico",
+      "id": "pico",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "chip-mystery",
+      "id": "sensor",
+      "top": -25.2,
+      "left": -121.18,
+      "attrs": {},
+      "rotate": 270
+    }
   ],
   "connections": [
-    [ "pico:GP0", "$serialMonitor:RX", "", [] ],
-    [ "pico:GP1", "$serialMonitor:TX", "", [] ]
+    [
+      "pico:GP0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "pico:GP1",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "pico:GP4",
+      "sensor:SDA",
+      "green",
+      [
+        "h-75.6",
+        "v-20.75"
+      ]
+    ],
+    [
+      "pico:GP5",
+      "sensor:SCL",
+      "yellow",
+      [
+        "h-66",
+        "v-30.35"
+      ]
+    ],
+    [
+      "pico:3V3",
+      "sensor:VCC",
+      "red",
+      [
+        "h13",
+        "v-131.15",
+        "h-145",
+        "v16.21"
+      ]
+    ],
+    [
+      "pico:GND.2",
+      "sensor:GND",
+      "black",
+      [
+        "h-146",
+        "v-169.95",
+        "h70.4",
+        "v26.21"
+      ]
+    ]
   ],
   "dependencies": {}
 }

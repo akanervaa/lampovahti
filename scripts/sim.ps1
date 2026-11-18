@@ -35,6 +35,10 @@ New-Item -ItemType Directory -Force $SimDir | Out-Null
 version = 1
 firmware = '../zephyr/zephyr.elf'
 elf = '../zephyr/zephyr.elf'
+
+[[chip]]
+name = 'mystery'
+binary = '../../../chips/mystery.chip.wasm'
 "@ | Set-Content -Encoding utf8 (Join-Path $SimDir "wokwi.toml")
 
 & $Cli $SimDir --diagram-file (Join-Path $Root "diagram.json") --timeout $TimeoutMs --timeout-exit-code 0

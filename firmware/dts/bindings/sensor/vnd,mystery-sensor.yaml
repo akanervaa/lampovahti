@@ -1,0 +1,10 @@
+# Binding MYS-1-lämpötila-anturille (kurssin opetuspiiri, lesson 63: WHO_AM_I 0xA7, I2C-osoite 0x48).
+#
+# Zephyr ei tunne tätä anturia, joten binding kertoo, millainen laite "vnd,mystery-sensor" on.
+# Se ei lisää mitään i2c-device.yaml:iin: solmu saa reg-ominaisuuden (osoite) ja tiedon väylästä.
+# Zephyrin ajuria ei ole; firmware puhuu anturille suoraan i2c_dt_spec-rakenteen kautta.
+description: MYS-1 I2C temperature sensor (course teaching part)
+
+compatible: "vnd,mystery-sensor"
+
+include: i2c-device.yaml

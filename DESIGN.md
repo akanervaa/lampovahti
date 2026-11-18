@@ -396,6 +396,13 @@ lampovahti/          oma git-repo (siirretty kurssin reposta 2026-11-18)
 | 0 | ✓ 2026-11-18 | ks. avoimet kysymykset (watchdog, ajoitus) |
 | 1 | ✓ 2026-11-18 | Wokwi: `<inf> main: Lämpövahdin runko käynnistyi`; debug-rivi ei näy (taso info) |
 | 2 | ✓ 2026-11-18 | `scripts/test.ps1`: `100% tests passed out of 1`; testi rikottu tahallaan → `Expected 4 Was 5` |
+| 3 | kesken | ✓ `mys1_conv` TDD:llä (6 testiä + kaikki 65 536 syötettä). ✓ Anturi kytketty, Wokwi: `MYS-1 vastaa: WHO_AM_I 0xa7`. Jäljellä: sensor-thread, joka lukee lämpötilan lokiin. |
+
+**Opittu (vaihe 3):** uusi overlay- tai binding-tiedosto vaatii **puhtaan käännöksen**
+(`scripts/build.ps1 -Clean`). Zephyr päättää mukaan otettavat tiedostot vain build-kansiota
+luodessaan; vanhassa buildissa uusi overlay jäi lukematta ja käännös kaatui virheeseen
+`DT_N_NODELABEL_mys1 ... undeclared`. Lisäksi epäonnistuneen käännöksen jälkeen simulaattori ajaa
+edellistä `zephyr.elf`-tiedostoa, joten tuloste on vanha.
 
 **Päätös: Unity haetaan käännösvaiheessa (CMake FetchContent)** (vaihe 2)
 - **Miksi:** kloonaus ei vaadi lisäaskeleita, eikä repoon tule vierasta koodia.

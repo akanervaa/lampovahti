@@ -4,3 +4,8 @@ version = 1
 firmware = 'firmware/build/zephyr/zephyr.elf'
 elf = 'firmware/build/zephyr/zephyr.elf'
 gdbServerPort = 3333
+
+# MYS-1 on Wokwin itse tehty piiri (WebAssembly). Kopio kurssin projektista 0063-mystery-sensor.
+[[chip]]
+name = 'mystery'
+binary = 'chips/mystery.chip.wasm'
