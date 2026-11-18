@@ -37,9 +37,4 @@ add_executable(test_mys1_conv test_mys1_conv.c)
 target_link_libraries(test_mys1_conv PRIVATE core unity)
 add_test(NAME mys1_conv COMMAND test_mys1_conv)
 
-# --- Testit ----------------------------------------------------------------------------------
-# Putkitesti: todistaa, että kääntäjä, Unity ja testien ajo toimivat, ennen kuin oikeita
-# testejä kirjoitetaan. Poistetaan, kun ensimmäinen oikea testi on olemassa.
-add_executable(test_smoke test_smoke.c)
-target_link_libraries(test_smoke PRIVATE unity)
-add_test(NAME smoke COMMAND test_smoke)
+
