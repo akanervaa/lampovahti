@@ -1,36 +1,36 @@
-/* controller.c: VAIHE 4 -tynkä decide()-funktiosta.
+/* controller.c: termostaatin päätöslogiikka. Rajapinta ja perustelut: controller.h.
  *
- * Täytä aukot ____ ja vastaa kysymyksiin K1–K3 kommentteihin.
+ * Oletusvastaus on "lämmitin pois" (F7: jumiin päälle jäänyt lämmitin on pahin vika).
+ * Switchissä ei ole default-haaraa: kun event.h:hon lisätään uusi tyyppi, kääntäjä
+ * (-Wswitch) näyttää tämän kohdan.
+ *
+ * Täytä aukot ____ ja vastaa kysymykseen K1.
  */
 #include "controller.h"
+#include "hysteresis.h"
 
 struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
 {
-    /* K1: Miksi oletusvastaus on "lämmitin pois" eikä "päällä"? (DESIGN.md F7)
-     *     Vastaus: Oletusvastaus on "lämmitin pois", koska on turvallisempaa jättää lämmitin pois päältä, jos anturi ei toimi oikein. Tämä vähentää riskiä ylikuumentumisesta tai muusta haitallisesta toiminnasta.
-     */
     struct actions act = { .heater_on = false };
 
-    /* K2: Tynkä ei käytä aikaa. Ilman tätä riviä PC-testien käännös kaatuu.
-     *     Miksi? (Vinkki: katso tests/CMakeLists.txt:n kääntäjäliput.)
-     *     Vastaus: aika on määritelty muuttujaksi, mutta sitä ei käytetä. Kääntäjä varoittaa käyttämättömästä muuttujasta, ja koska käännös on asetettu varoituksista virheiksi (esim. -Werror), käännös kaatuu. Tämä rivi estää varoituksen käyttämättömästä muuttujasta.
-     */
-    (void)now_ms;
+    (void)now_ms;   /* aikaa tarvitaan vasta hälytyksessä (F3) */
 
     switch (ev.type) {
     case EV_SAMPLE:
-        act.heater_on = ev.centi < s->target_centi;   /* tynkäsääntö: lämpötila < tavoite */
+        s->heater_on = hysteresis_heater(s->heater_on, ev.centi,
+                                         s->target_centi, s->band_centi);
         break;
 
     case EV_SENSOR_FAULT:
-        act.heater_on = false;
+        /* K1: Miksi vika kirjoitetaan MUISTIIN (s->heater_on) eikä pelkästään vastaukseen
+         *     (act.heater_on)? Mitä tapahtuisi, kun anturi palaa ja ensimmäinen lukema on
+         *     kaistan sisällä? (Testi test_after_fault_heater_stays_off_in_band.)
+         *     Vastaus: Koska vika voi olla tilapäinen
+         */
+        s->heater_on = false;   /* vika: pois */
         break;
-
-    /* K3: Tässä switchissä ei ole default-haaraa. Miksi se on tarkoituksellista?
-     *     (Muista event.h:n kommentti enumista.)
-     *     Vastaus: Koska käytetään enum, kääntäjä voi varoittaa, jos jotain enum-arvoa ei käsitellä switchissä.
-     */
     }
 
+    act.heater_on = s->heater_on;       /* vastaus = päivitetty muisti */
     return act;
 }

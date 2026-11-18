@@ -31,6 +31,7 @@ enable_testing()
 add_library(core STATIC
     ../core/mys1_conv.c
     ../core/controller.c
+    ../core/hysteresis.c
 )
 target_include_directories(core PUBLIC ../core)
 
@@ -41,5 +42,9 @@ add_test(NAME mys1_conv COMMAND test_mys1_conv)
 add_executable(test_controller test_controller.c)
 target_link_libraries(test_controller PRIVATE core unity)
 add_test(NAME controller COMMAND test_controller)
+
+add_executable(test_hysteresis test_hysteresis.c)
+target_link_libraries(test_hysteresis PRIVATE core unity)
+add_test(NAME hysteresis COMMAND test_hysteresis)
 
 

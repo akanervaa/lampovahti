@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(control, LOG_LEVEL_INF);
 
 #define CONTROL_STACK_SIZE  1024    /* tavuina, mitataan myöhemmin (lesson 91) */
 #define INBOX_DEPTH         8       /* tapahtumaa */
-#define TARGET_CENTI        2270    /* 22.70 °C: Wokwin MYS-1 vaihtelee 22.6–22.9, joten LED räpsyy */
+#define TARGET_CENTI        2270    /* 22.70 °C: Wokwin MYS-1 kiertää 22.50–22.93, joten LED vaihtuu */
 
 /* Postilaatikko: varataan käännösaikana (ei mallocia). Viestin koko on struct eventin koko,
  * ja viimeinen luku on tasaus tavuina. */
@@ -57,7 +57,11 @@ static void control_thread(void *p1, void *p2, void *p3)
     /* K2: Tila on control_threadin PAIKALLINEN muuttuja eikä globaali. Mitä etua siitä on?
      *     (DESIGN.md 4.2: "yksi kirjoittaja")
      *     Vastaus: No just se, että sillä on vaan yksi kirjoittaja ja se on paikallinen, niin ei tarvita lukituksia tai muuta monimutkaista synkronointia. */
-    struct state st = { .target_centi = TARGET_CENTI };
+    struct state st = {
+        .target_centi = TARGET_CENTI,
+        .band_centi   = CONFIG_LAMPO_HYST_BAND_CENTI,
+        .heater_on    = false,          /* sama kuin LEDin lähtötila (INACTIVE) */
+    };
     bool heater_was_on = false;
 
     LOG_INF("control kaynnissa, tavoite %d.%02d C", TARGET_CENTI / 100, TARGET_CENTI % 100);

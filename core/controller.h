@@ -4,8 +4,8 @@
  * Se ei koske rautaan eikä kysy aikaa itse: aika tulee parametrina, jotta testi voi
  * syöttää minkä tahansa ajan. Puhdasta C:tä, testataan PC:llä.
  *
- * VAIHE 4: tynkä. Sääntö: lämmitin päällä, jos lämpötila < tavoite. Ei hystereesiä,
- * joten LED räpsyy tavoitteen ympärillä (tarkoituksella, ks. vaihe 5).
+ * Vaihe 5: lämmitin ohjataan hystereesillä (hysteresis.h). Anturivika sammuttaa
+ * lämmittimen (F7). Tulossa: uskottavuus, hälytys, historia.
  */
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
@@ -16,10 +16,18 @@
 #include "event.h"
 
 /* Muistivihko: mitä vastaus riippuu, mutta mikä ei ole tapahtumassa.
- * Vaihe 5 lisää tänne mm. heater_on (hystereesi) ja ajan, jolloin lämpötila lähti
- * sallitulta alueelta (F3). */
+ *
+ * Kahdenlaista tietoa:
+ *   ASETUKSET: kuori asettaa alussa (myöhemmin shell viestillä). decide() vain lukee.
+ *   MUISTI:    decide() itse päivittää joka kutsulla.
+ * Tulossa: aika, jolloin lämpötila lähti sallitulta alueelta (F3). */
 struct state {
+    /* asetukset */
     int32_t target_centi;   /* tavoite sadasosa-asteina, sama yksikkö kuin event.centi */
+    int32_t band_centi;     /* hystereesikaistan leveys, esim. 30 → tavoite ± 0.15 °C */
+
+    /* muisti */
+    bool heater_on;         /* lämmittimen tila edellisen päätöksen jälkeen */
 };
 
 /* Vastauslappu kuorelle. */

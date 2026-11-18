@@ -14,5 +14,6 @@ target_sources(app PRIVATE
 target_sources(app PRIVATE
     ../core/mys1_conv.c
     ../core/controller.c
+    ../core/hysteresis.c
 )
 target_include_directories(app PRIVATE ../core)
