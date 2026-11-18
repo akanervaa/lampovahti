@@ -25,6 +25,7 @@ Avaa tämä kansio VS Codessa.
 | Käännä | `Ctrl+Shift+B` | `./scripts/build.ps1` |
 | Puhdas käännös | Tasks: *Clean build firmware* | `./scripts/build.ps1 -Clean` |
 | Simuloi | `F1` → *Wokwi: Start Simulator* | `./scripts/sim.ps1` |
+| Yksikkötestit (PC) | `Ctrl+Shift+P` → *Tasks: Run Test Task* | `./scripts/test.ps1` |
 | Debuggaa | *Wokwi: Start Simulator and Wait for Debugger*, sitten `F5` | |
 
 ## Rakenne
@@ -33,7 +34,7 @@ Avaa tämä kansio VS Codessa.
 DESIGN.md        vaatimukset, arkkitehtuuri, päätökset
 firmware/        Zephyr-sovellus (kuori)
 core/            ydinmoduulit, puhdasta C:tä (tulossa)
-tests/           PC-testit Unityllä (tulossa)
+tests/           PC-testit Unityllä (haetaan ensimmäisellä käännöksellä, tarvitsee verkon)
 spikes/          kertakäyttöiset kokeilut
 scripts/         käännös- ja simulointiskriptit
 diagram.json     Wokwin kytkennät

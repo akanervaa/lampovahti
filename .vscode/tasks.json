@@ -15,6 +15,14 @@
       "command": "pwsh",
       "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/build.ps1", "-Clean"],
       "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Run unit tests",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/test.ps1"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": ["$gcc"]
     }
   ]
 }

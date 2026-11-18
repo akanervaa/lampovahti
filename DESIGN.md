@@ -395,6 +395,17 @@ lampovahti/          oma git-repo (siirretty kurssin reposta 2026-11-18)
 |---|---|---|
 | 0 | ✓ 2026-11-18 | ks. avoimet kysymykset (watchdog, ajoitus) |
 | 1 | ✓ 2026-11-18 | Wokwi: `<inf> main: Lämpövahdin runko käynnistyi`; debug-rivi ei näy (taso info) |
+| 2 | ✓ 2026-11-18 | `scripts/test.ps1`: `100% tests passed out of 1`; testi rikottu tahallaan → `Expected 4 Was 5` |
+
+**Päätös: Unity haetaan käännösvaiheessa (CMake FetchContent)** (vaihe 2)
+- **Miksi:** kloonaus ei vaadi lisäaskeleita, eikä repoon tule vierasta koodia.
+- **Hinta:** ensimmäinen (ja puhdas) käännös tarvitsee verkkoyhteyden; ladattu kopio jää
+  `tests/build/_deps`-kansioon.
+- **Lukitus:** commitin tarkistesummaan (`cbcd08f…` = v2.6.1), ei versionimeen. Versionimen voi
+  siirtää osoittamaan toiseen committiin, tarkistesummaa ei.
+- **Hylätyt:** tiedostojen kopiointi repoon (päivitys käsin, vierasta koodia historiassa, lisenssi
+  mukaan); git submodule (kloonaus vaatii `--recursive`, unohtuessa sekava käännösvirhe).
+- **Lisäksi:** testit käännetään `-Werror`:lla, joten varoitukset pysäyttävät käännöksen.
 
 **Päätös: lokitila `CONFIG_LOG_MODE_DEFERRED`** (vaihe 1)
 - **Miksi:** `LOG_*` vain laittaa viestin puskuriin ja palaa heti; Zephyrin lokithread (alin
