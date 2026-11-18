@@ -37,4 +37,21 @@ config LAMPO_HYST_BAND_CENTI
 	  kun se on yli tavoite + kaista/2. Kaistan sisällä tila pysyy (F2).
 	  30 = tavoite ± 0.15 °C.
 
+config LAMPO_ALARM_RANGE_CENTI
+	int "Sallittu poikkeama tavoitteesta (sadasosa-asteina)"
+	default 200
+	range 10 5000
+	help
+	  Lämpötila on sallitulla alueella, kun se on enintään tämän verran
+	  tavoitteesta (F3). 200 = ± 2 °C. Raja itse on vielä alueella.
+
+config LAMPO_ALARM_DELAY_MS
+	int "Hälytysviive (ms)"
+	default 30000
+	range 1000 3600000
+	help
+	  Kuinka kauan lämpötila saa olla yhtäjaksoisesti sallitun alueen
+	  ulkopuolella ennen hälytystä (F3). Anturivika hälyttää heti.
+	  Sama aika on kuittauksen torkku.
+
 endmenu

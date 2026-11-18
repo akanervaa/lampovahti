@@ -36,6 +36,25 @@
         "color": "red",
         "label": "Lämmitin"
       }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_alarm",
+      "top": 167.15,
+      "left": -76.8,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_alarm",
+      "top": 110,
+      "left": -170,
+      "attrs": {
+        "color": "yellow",
+        "label": "Hälytys"
+      }
     }
   ],
   "connections": [
@@ -105,6 +124,24 @@
     ],
     [
       "led_heater:C",
+      "pico:GND.4",
+      "black",
+      []
+    ],
+    [
+      "pico:GP14",
+      "r_alarm:2",
+      "gold",
+      []
+    ],
+    [
+      "r_alarm:1",
+      "led_alarm:A",
+      "gold",
+      []
+    ],
+    [
+      "led_alarm:C",
       "pico:GND.4",
       "black",
       []

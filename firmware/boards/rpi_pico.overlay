@@ -5,6 +5,7 @@
  *
  *   GP4 = SDA, GP5 = SCL   MYS-1-anturi, I2C-osoite 0x48
  *   GP15                   lämmitin-LED (aktiivinen ylhäällä)
+ *   GP14                   hälytys-LED (aktiivinen ylhäällä)
  */
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -45,6 +46,9 @@
 		compatible = "gpio-leds";
 		heater_led: heater_led {
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		};
+		alarm_led: alarm_led {
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

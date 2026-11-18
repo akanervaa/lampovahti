@@ -4,7 +4,11 @@
  * Switchissä ei ole default-haaraa: kun event.h:hon lisätään uusi tyyppi, kääntäjä
  * (-Wswitch) näyttää tämän kohdan.
  *
- * Täytä aukot ____ ja vastaa kysymykseen K1.
+ * Vika kirjoitetaan MUISTIIN (s->heater_on), ei vain vastaukseen: muuten muisti sanoisi
+ * yhä "päällä", ja kun anturi palaa kaistan sisältä, hystereesi sytyttäisi lämmittimen
+ * itsestään. Vastaus otetaan aina muistista, joten ne eivät voi olla eri mieltä.
+ *
+ * Täytä aukot ____: hälytyksen syöte jokaisessa haarassa (päätit nämä jo) ja vastaus.
  */
 #include "controller.h"
 #include "hysteresis.h"
@@ -12,9 +16,11 @@
 
 struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
 {
-    struct actions act = { .heater_on = false };
+    struct actions act = { .heater_on = false, .alarm_on = false };
 
-    (void)now_ms;   /* aikaa tarvitaan vasta hälytyksessä (F3) */
+    /* Mitä hälytykselle kerrotaan. Oletus on vika: jos jokin haara unohtaa asettaa
+     * tämän, tuloksena on turha hälytys eikä hiljaa ohitettu vika. */
+    enum alarm_input ain = ALARM_IN_FAULT;
 
     switch (ev.type) {
     case EV_SAMPLE: {
@@ -28,22 +34,29 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
         if (ok) {
             s->heater_on = hysteresis_heater(s->heater_on, ev.centi,
                                              s->target_centi, s->band_centi);
+
+            /* Sallittu alue: tavoite ± alarm_range_centi, rajat mukaan lukien. */
+            int32_t dev = ev.centi - s->target_centi;
+            if (dev < 0) {
+                dev = -dev;
+            }
+            ain = (dev <= s->alarm_range_centi) ? ALARM_IN_OK : ALARM_IN_OUT;
         } else {
-            s->heater_on = false;    /* F8: mahdoton lukema käsitellään kuin anturivika */
+            s->heater_on = false;   /* F8: mahdoton lukema käsitellään kuin anturivika */
+            ain = ALARM_IN_FAULT;
         }
         break;
     }
 
     case EV_SENSOR_FAULT:
-        /* K1: Miksi vika kirjoitetaan MUISTIIN (s->heater_on) eikä pelkästään vastaukseen
-         *     (act.heater_on)? Mitä tapahtuisi, kun anturi palaa ja ensimmäinen lukema on
-         *     kaistan sisällä? (Testi test_after_fault_heater_stays_off_in_band.)
-         *     Vastaus: Koska vika voi olla tilapäinen
-         */
-        s->heater_on = false;   /* vika: pois */
+        s->heater_on = false;       /* F7 */
+        ain = ALARM_IN_FAULT;
         break;
     }
 
-    act.heater_on = s->heater_on;       /* vastaus = päivitetty muisti */
+    alarm_update(&s->alarm, ain, now_ms, s->alarm_delay_ms);
+
+    act.heater_on = s->heater_on;   /* vastaus = päivitetty muisti */
+    act.alarm_on  = s->alarm.on;    /* sama periaate kuin lämmittimellä: vastaus muistista */
     return act;
 }

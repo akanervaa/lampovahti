@@ -23,8 +23,22 @@ LOG_MODULE_REGISTER(control, LOG_LEVEL_INF);
  * ja viimeinen luku on tasaus tavuina. */
 K_MSGQ_DEFINE(inbox, sizeof(struct event), INBOX_DEPTH, 4);
 
-/* Lämmitin-LED devicetreestä (boards/rpi_pico.overlay, label heater_led). */
+/* LEDit devicetreestä (boards/rpi_pico.overlay). */
 static const struct gpio_dt_spec heater_led = GPIO_DT_SPEC_GET(DT_NODELABEL(heater_led), gpios);
+static const struct gpio_dt_spec alarm_led  = GPIO_DT_SPEC_GET(DT_NODELABEL(alarm_led), gpios);
+
+/* Hälytys-LED vilkkuu 2 Hz k_timerilla (DESIGN.md 4.4): ei omaa threadia, koska vilkutus
+ * on vain pinnin kääntö. Ajastimen funktio ajetaan keskeytyksessä, joten se ei saa odottaa;
+ * gpio_pin_toggle_dt ei odota. */
+#define ALARM_BLINK_MS  250     /* 250 ms päällä + 250 ms pois = 2 Hz */
+
+static void alarm_blink(struct k_timer *timer)
+{
+    ARG_UNUSED(timer);
+    gpio_pin_toggle_dt(&alarm_led);
+}
+
+K_TIMER_DEFINE(alarm_timer, alarm_blink, NULL);
 
 int control_post(struct event ev)
 {
@@ -42,15 +56,18 @@ static void control_thread(void *p1, void *p2, void *p3)
     ARG_UNUSED(p2);
     ARG_UNUSED(p3);
 
-    if (!gpio_is_ready_dt(&heater_led)) {
-        LOG_ERR("lammitin-LED ei valmis");
+    if (!gpio_is_ready_dt(&heater_led) || !gpio_is_ready_dt(&alarm_led)) {
+        LOG_ERR("LEDit eivat valmiita");
         return;
     }
     /* Lähtötila: GPIO_OUTPUT_ACTIVE (pinni heti päälle) vai GPIO_OUTPUT_INACTIVE (heti pois)?
      * Mieti: mitä lämmitin tekee sinä aikana, kun ensimmäistä lukemaa vielä odotetaan? (F7) */
     int rc = gpio_pin_configure_dt(&heater_led, GPIO_OUTPUT_INACTIVE);
+    if (rc == 0) {
+        rc = gpio_pin_configure_dt(&alarm_led, GPIO_OUTPUT_INACTIVE);
+    }
     if (rc != 0) {
-        LOG_ERR("lammitin-LEDin asetus epaonnistui (%d)", rc);
+        LOG_ERR("LEDien asetus epaonnistui (%d)", rc);
         return;
     }
 
@@ -60,9 +77,12 @@ static void control_thread(void *p1, void *p2, void *p3)
     struct state st = {
         .target_centi = TARGET_CENTI,
         .band_centi   = CONFIG_LAMPO_HYST_BAND_CENTI,
+        .alarm_range_centi = CONFIG_LAMPO_ALARM_RANGE_CENTI,
+        .alarm_delay_ms    = CONFIG_LAMPO_ALARM_DELAY_MS,
         .heater_on    = false,          /* sama kuin LEDin lähtötila (INACTIVE) */
     };
     bool heater_was_on = false;
+    bool alarm_was_on  = false;
 
     LOG_INF("control kaynnissa, tavoite %d.%02d C", TARGET_CENTI / 100, TARGET_CENTI % 100);
 
@@ -80,6 +100,19 @@ static void control_thread(void *p1, void *p2, void *p3)
         if (act.heater_on != heater_was_on) {
             LOG_INF("lammitin %s", act.heater_on ? "PAALLE" : "POIS");
             heater_was_on = act.heater_on;
+        }
+
+        /* Hälytys: kuori toteuttaa vilkutuksen ja kirjaa muutoksen lokiin (F6). */
+        if (act.alarm_on != alarm_was_on) {
+            if (act.alarm_on) {
+                LOG_WRN("HALYTYS");
+                k_timer_start(&alarm_timer, K_MSEC(ALARM_BLINK_MS), K_MSEC(ALARM_BLINK_MS));
+            } else {
+                LOG_INF("halytys kuitattu");
+                k_timer_stop(&alarm_timer);
+                gpio_pin_set_dt(&alarm_led, 0);
+            }
+            alarm_was_on = act.alarm_on;
         }
     }
 }

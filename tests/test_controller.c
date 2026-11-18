@@ -15,13 +15,16 @@
 
 #define TARGET 2270
 #define BAND   30
+#define RANGE  200      /* sallittu alue 2070 ... 2470 */
+#define DELAY  30000u
 
 static struct state s;
 
 void setUp(void)
 {
     /* Ajetaan ennen jokaista testiä: jokainen testi alkaa samasta tilasta. */
-    s = (struct state){ .target_centi = TARGET, .band_centi = BAND, .heater_on = false };
+    s = (struct state){ .target_centi = TARGET, .band_centi = BAND,
+                        .alarm_range_centi = RANGE, .alarm_delay_ms = DELAY };
 }
 
 void tearDown(void) {}
@@ -37,6 +40,19 @@ static bool fault(void)
 {
     struct event ev = { .type = EV_SENSOR_FAULT, .centi = 0 };
     return decide(&s, ev, 0).heater_on;
+}
+
+/* Hälytystestien apufunktiot: palauttavat hälytyksen tilan, aika annetaan. */
+static bool alarm_after_sample(int32_t centi, uint32_t at_ms)
+{
+    struct event ev = { .type = EV_SAMPLE, .centi = centi };
+    return decide(&s, ev, at_ms).alarm_on;
+}
+
+static bool alarm_after_fault(uint32_t at_ms)
+{
+    struct event ev = { .type = EV_SENSOR_FAULT, .centi = 0 };
+    return decide(&s, ev, at_ms).alarm_on;
 }
 
 /* Lämpötila nousee ja laskee kaistan läpi. Kaistan sisällä vastaus riippuu
@@ -83,6 +99,31 @@ static void test_real_jump_accepted_after_one_reading(void)
     TEST_ASSERT_EQUAL(true,  sample(1510));   /* ? */
 }
 
+/* F3: decide() kertoo hälytykselle oikean asian. Hälytyksen omat säännöt testataan
+ * test_alarm.c:ssä; täällä vain, että kytkentä toimii. */
+static void test_alarm_range_edges(void)
+{
+    TEST_ASSERT_EQUAL(false, alarm_after_sample(2470, 0));      /* tasan +2.00: alueella */
+    TEST_ASSERT_EQUAL(false, alarm_after_sample(2470, 30000));  /* alueella, ei hälytä */
+}
+
+static void test_alarm_out_of_range_for_delay(void)
+{
+    TEST_ASSERT_EQUAL(false, alarm_after_sample(2471, 0));      /* +2.01: ulkona */
+    TEST_ASSERT_EQUAL(true,  alarm_after_sample(2471, 30000));  /* 30 s ulkona */
+}
+
+static void test_sensor_fault_alarms_immediately(void)
+{
+    TEST_ASSERT_EQUAL(true, alarm_after_fault(0));
+}
+
+static void test_implausible_reading_alarms_immediately(void)
+{
+    TEST_ASSERT_EQUAL(false, alarm_after_sample(2270, 0));
+    TEST_ASSERT_EQUAL(true,  alarm_after_sample(51198, 1000)); /* bittivirhe */
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -91,5 +132,9 @@ int main(void)
     RUN_TEST(test_after_fault_heater_stays_off_in_band);
     RUN_TEST(test_glitch_turns_heater_off_then_recovers);
     RUN_TEST(test_real_jump_accepted_after_one_reading);
+    RUN_TEST(test_alarm_range_edges);
+    RUN_TEST(test_alarm_out_of_range_for_delay);
+    RUN_TEST(test_sensor_fault_alarms_immediately);
+    RUN_TEST(test_implausible_reading_alarms_immediately);
     return UNITY_END();
 }
