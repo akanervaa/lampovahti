@@ -61,6 +61,12 @@ static bool alarm_after_button(uint32_t at_ms)
     return decide(&s, ev, at_ms).alarm_on;
 }
 
+static void set_target(int32_t centi)
+{
+    struct event ev = { .type = EV_SET_TARGET, .centi = centi };
+    (void)decide(&s, ev, 0);
+}
+
 /* Lämpötila nousee ja laskee kaistan läpi. Kaistan sisällä vastaus riippuu
  * siitä, mistä suunnasta tultiin. */
 static void test_hysteresis_remembers_direction(void)
@@ -171,6 +177,26 @@ static void test_button_keeps_heater(void)
     TEST_ASSERT_EQUAL(true, decide(&s, ev, 0).heater_on);
 }
 
+/* Vaihe 7: tavoitteen vaihto. Täytä ____ (true/false). Kaista on aina tavoite ± 15. */
+
+/* Sama lämpötila, eri tavoite: kaista siirtyy lämpötilan ylä- tai alapuolelle. */
+static void test_set_target_moves_band(void)
+{
+    TEST_ASSERT_FALSE(sample(2270));            /* tavoite 22.70: kaistan sisällä, pois */
+    set_target(2500);                           /* kaista 24.85 ... 25.15 */
+    TEST_ASSERT_EQUAL(true, sample(2270));
+    set_target(2000);                           /* kaista 19.85 ... 20.15 */
+    TEST_ASSERT_EQUAL(false, sample(2270));
+}
+
+/* Tavoitteen vaihto ei itse koske lämmittimeen: vasta seuraava lukema ratkaisee (K6). */
+static void test_set_target_waits_for_reading(void)
+{
+    TEST_ASSERT_TRUE(sample(2200));             /* alle 22.55: päälle */
+    struct event ev = { .type = EV_SET_TARGET, .centi = 2000 };
+    TEST_ASSERT_EQUAL(true, decide(&s, ev, 0).heater_on);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -187,5 +213,7 @@ int main(void)
     RUN_TEST(test_button_acks_alarm);
     RUN_TEST(test_button_without_alarm_does_nothing);
     RUN_TEST(test_button_keeps_heater);
+    RUN_TEST(test_set_target_moves_band);
+    RUN_TEST(test_set_target_waits_for_reading);
     return UNITY_END();
 }

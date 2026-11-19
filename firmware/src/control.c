@@ -40,6 +40,18 @@ static void alarm_blink(struct k_timer *timer)
 
 K_TIMER_DEFINE(alarm_timer, alarm_blink, NULL);
 
+/* Valokuva shellille. Koko järjestelmän AINOA mutex: se suojaa vain tätä kopiota, ja kumpikin
+ * pitää sitä vain kopioinnin ajan (noin 0.5 kt memcpy, mikrosekunteja). */
+static struct state snap;
+K_MUTEX_DEFINE(snap_lock);
+
+void control_snapshot(struct state *out)
+{
+    k_mutex_lock(&snap_lock, K_FOREVER);
+    *out = snap;
+    k_mutex_unlock(&snap_lock);
+}
+
 int control_post(struct event ev)
 {
     /* K1: Aikakatkaisu: K_NO_WAIT (ei odota) vai K_FOREVER (odottaa, kunnes laatikossa on tilaa)?
@@ -85,6 +97,10 @@ static void control_thread(void *p1, void *p2, void *p3)
     bool heater_was_on = false;
     bool alarm_was_on  = false;
 
+    k_mutex_lock(&snap_lock, K_FOREVER);
+    snap = st;                  /* shell näkee asetukset jo ennen ensimmäistä lukemaa */
+    k_mutex_unlock(&snap_lock);
+
     LOG_INF("control kaynnissa, tavoite %d.%02d C", TARGET_CENTI / 100, TARGET_CENTI % 100);
 
     while (1) {
@@ -96,6 +112,10 @@ static void control_thread(void *p1, void *p2, void *p3)
          *     Mieti: kumpaa decide() muuttaa, ja minkä muutosten pitää säilyä seuraavaan kertaan?
          *     Vastaus: tila annetaan osoitteena, koska decide voi muuttaa sen tilaa, mutta tapahtumaa ei anneta osoitteena, koska decide ei muuta sitä. Tapahtuma on vain syöte, eikä sen muutosten tarvitse säilyä seuraavaan kertaan. */
         struct actions act = decide(&st, ev, k_uptime_get_32());
+
+        k_mutex_lock(&snap_lock, K_FOREVER);
+        snap = st;
+        k_mutex_unlock(&snap_lock);
 
         gpio_pin_set_dt(&heater_led, act.heater_on);
         if (act.heater_on != heater_was_on) {

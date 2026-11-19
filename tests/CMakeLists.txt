@@ -35,6 +35,7 @@ add_library(core STATIC
     ../core/plausibility.c
     ../core/alarm.c
     ../core/history.c
+    ../core/cmd_parse.c
 )
 target_include_directories(core PUBLIC ../core)
 
@@ -61,3 +62,7 @@ add_test(NAME alarm COMMAND test_alarm)
 add_executable(test_history test_history.c)
 target_link_libraries(test_history PRIVATE core unity)
 add_test(NAME history COMMAND test_history)
+
+add_executable(test_cmd_parse test_cmd_parse.c)
+target_link_libraries(test_cmd_parse PRIVATE core unity)
+add_test(NAME cmd_parse COMMAND test_cmd_parse)

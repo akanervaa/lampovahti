@@ -9,6 +9,7 @@ target_sources(app PRIVATE
     src/sensor.c
     src/control.c
     src/button.c
+    src/shell.c
 )
 
 # Ydin (core/): sama puhdas C, joka testataan PC:llä (tests/). Tässä se käännetään Arm-kääntäjällä.
@@ -19,5 +20,6 @@ target_sources(app PRIVATE
     ../core/plausibility.c
     ../core/alarm.c
     ../core/history.c
+    ../core/cmd_parse.c
 )
 target_include_directories(app PRIVATE ../core)

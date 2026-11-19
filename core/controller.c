@@ -71,6 +71,17 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
          *     hälytykselle ei kerrota mitään: palataan suoraan muistista.
          */
         return (struct actions){ .heater_on = s->heater_on, .alarm_on = s->alarm.on };
+
+    case EV_SET_TARGET:
+        /* Vaihe 7. Täytä aukko: mikä kenttä tapahtumasta on uusi tavoite? (event.h) */
+        s->target_centi = ev.centi;
+
+        /* K6: Lämmitin ja hälytys päivittyvät vasta seuraavassa lukemassa (alle 1 s päästä),
+         *     eivät heti. Miksi tässä ei kutsuta hystereesiä edellisellä lukemalla
+         *     (s->prev_centi)? Vihje: katso plausibility.h: mitä prev_centi voi sisältää?
+         *     Vastaus: prev_centi voi olla mahdoton lukema eli tyhjä, jolloin hystereesi ei saa sitä käsitellä. */
+
+        return (struct actions){ .heater_on = s->heater_on, .alarm_on = s->alarm.on };
     }
 
     alarm_update(&s->alarm, ain, now_ms, s->alarm_delay_ms);

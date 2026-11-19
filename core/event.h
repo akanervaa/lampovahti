@@ -18,7 +18,8 @@ enum event_type {
                        * centi ei merkitse mitään: decide() ei lue sitä, lähettäjä asettaa 0. */
     EV_BUTTON,        /* kuittausnappia painettiin (F4), värähtely jo suodatettu kuoressa
                        * (firmware/src/button.c). centi ei merkitse mitään, lähettäjä asettaa 0. */
-    /* Myöhemmin: EV_SET_TARGET (vaihe 7). */
+    EV_SET_TARGET,    /* uusi tavoite shellistä (F5), arvo kentässä centi. Lähettäjä on jo
+                       * tarkistanut arvon (core/cmd_parse.c). */
 };
 
 struct event {

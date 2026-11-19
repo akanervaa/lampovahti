@@ -35,7 +35,7 @@ Pinnit päätetään devicetreen overlayssa (`boards/rpi_pico.overlay`), ei C-ko
 | F2 | Ohjaa lämmitintä **hystereesillä**: päälle, kun T ≤ tavoite − 0.5 °C; pois, kun T ≥ tavoite + 0.5 °C; välissä pidä nykyinen tila. | Yksi raja kytkisi releen päälle ja pois jatkuvasti, kun lämpötila heiluu rajan kohdalla. Rele kuluisi ja aiheuttaisi häiriöitä. Ks. päätös P2. |
 | F3 | Hälytä (hälytys-LED vilkkuu), jos lämpötila on liian kauan sallitun alueen ulkopuolella. | Lyhyt poikkeama (esim. kannen avaus) ei saa hälyttää turhaan. Arvot: ks. avoimet kysymykset. |
 | F4 | Napin painallus kuittaa hälytyksen. | |
-| F5 | Shell-komennot: `status`, `set target <°C>`, `history`. | Laitetta voi tutkia ja säätää ilman uudelleenkääntämistä. |
+| F5 | Shell-komennot: `lampo status`, `lampo target <°C>`, `lampo history` (etuliite `lampo`, koska Zephyrillä on oma `history`). | Laitetta voi tutkia ja säätää ilman uudelleenkääntämistä. |
 | F6 | Lokiin tärkeät tapahtumat: hälytys, anturivika, asetusmuutos. | Jälkikäteen nähdään, mitä laite teki. |
 | F7 | Jos anturi ei vastaa → lämmitin pois ja hälytys. | Pahin tilanne on lämmitin jumissa päällä. Turvallisin tila on aina "lämmitin pois". |
 | F8 | Fyysisesti mahdoton lukema (alle −40 °C, yli +85 °C tai epärealistinen hyppy) → käsitellään anturivikana kuten F7. | Anturi voi vastata mutta väärin, esim. jumittua näyttämään kylmää, jolloin ohjain lämmittäisi loputtomiin. F7 ei huomaa tätä. |
@@ -400,6 +400,7 @@ lampovahti/          oma git-repo (siirretty kurssin reposta 2026-11-18)
 | 4 | ✓ 2026-11-18 | `decide()`-tynkä + 4 PC-testiä; rajatapaustesti kaatuu, kun `<` vaihdetaan `<=`:ksi. Wokwissa anturi → postilaatikko → control → LED: `T = 22.59 C` → `lammitin PAALLE`, `T = 22.70 C` → `lammitin POIS`. LED räpsyy tavoitteen ympärillä (ei hystereesiä, tarkoituksella). |
 | 5 | ✓ 2026-11-18 | Ydin TDD:llä: hystereesi, uskottavuus, hälytys (myös laskurin pyörähdys), historia; jokainen testi nähty kaatuvan. Wokwissa lämmitin vaihtaa vain kaistan reunoilla (22.50 päälle, 22.93 pois); hälytys todettu tilapäisellä ± 0.10 °C:n alueella. Historia näyttää vain viimeiset 32 tapahtumaa: harvinaisten tapahtumien oma rengas on myöhempi parannus. |
 | 6 | ✓ 2026-11-18 | Nappi GP13 (aktiivinen alhaalla, sisäinen pull-up). ISR vain ajastaa työn; värähtely suodatetaan työjonossa (k_work_reschedule 30 ms, pinni luetaan uudelleen). decide() kuittaa ilman alarm_update()-kutsua: muuten oletus ALARM_IN_FAULT hälytti napista (testi löysi). Wokwissa painallus kuittasi hälytyksen ja se palasi torkun jälkeen. |
+| 7 | ✓ 2026-11-19 | Komennot `lampo status/target/history`. cmd_parse TDD:llä: taulukko + 10 000 edestakaista + 100 000 roskasyötettä kiinteillä siemenillä. Ylivuotosuojan testi löytyi vasta mutaatiolla: "99999999999" hylättiin vahingossa, joten lisättiin "4294967319" (2^32 + 23 → olisi 23.00 °C). Tavoitteen vaihto ei aja hystereesiä: prev_centi voi olla hylätty lukema. Valokuva yhden mutexin takana. Wokwissa kaikki komennot toimivat. |
 
 **Päätös: ajat sovelluksen omina Kconfig-symboleina** (vaihe 3, `firmware/Kconfig`)
 - **Miksi:** Wokwissa Zephyrin aika ja simuloitu anturi eivät kulje samaa tahtia (avoimet
