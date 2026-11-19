@@ -1,0 +1,21 @@
+# Ytimen yksikkötestit jokaisella pushilla (core/ ja tests/, PC:n gcc). Firmwarea ei käännetä
+# täällä: Zephyr-työtilan asennus on raskas, ja ytimen logiikka on se, mikä testataan.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Configure
+        run: cmake -S tests -B build -G Ninja
+      - name: Build
+        run: cmake --build build
+      - name: Run
+        run: ctest --test-dir build --output-on-failure

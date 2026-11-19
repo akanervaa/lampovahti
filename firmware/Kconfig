@@ -30,12 +30,12 @@ config LAMPO_DRDY_TIMEOUT_MS
 
 config LAMPO_HYST_BAND_CENTI
 	int "Hystereesikaistan leveys (sadasosa-asteina)"
-	default 30
+	default 100
 	range 2 500
 	help
 	  Lämmitin syttyy, kun lämpötila on alle tavoite - kaista/2, ja sammuu,
 	  kun se on yli tavoite + kaista/2. Kaistan sisällä tila pysyy (F2).
-	  30 = tavoite ± 0.15 °C.
+	  100 = tavoite ± 0.5 °C.
 
 config LAMPO_ALARM_RANGE_CENTI
 	int "Sallittu poikkeama tavoitteesta (sadasosa-asteina)"

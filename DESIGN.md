@@ -7,7 +7,7 @@ Picolle, ajetaan Wokwi-simulaattorissa.
 Tämä dokumentti kertoo **mitä** tehdään ja ennen kaikkea **miksi**. Jokaisessa päätöksessä
 on kirjattu myös hylätyt vaihtoehdot ja hylkäämisen syy.
 
-Tila: **vaihe 4, toteutus** (vaatimukset, arkkitehtuuri ja toteutusjärjestys valmiit 2026-11-18).
+Tila: **valmis**, vaiheet 1–8 (2026-11-19). Edistyminen ja havainnot: luku 5, taulukon lopussa.
 
 ---
 
@@ -32,7 +32,7 @@ Pinnit päätetään devicetreen overlayssa (`boards/rpi_pico.overlay`), ei C-ko
 | # | Vaatimus | Miksi |
 |---|---|---|
 | F1 | Mittaa lämpötila kerran sekunnissa. | Lämpötila muuttuu hitaasti; 1 s riittää ja säästää väylää. |
-| F2 | Ohjaa lämmitintä **hystereesillä**: päälle, kun T ≤ tavoite − 0.5 °C; pois, kun T ≥ tavoite + 0.5 °C; välissä pidä nykyinen tila. | Yksi raja kytkisi releen päälle ja pois jatkuvasti, kun lämpötila heiluu rajan kohdalla. Rele kuluisi ja aiheuttaisi häiriöitä. Ks. päätös P2. |
+| F2 | Ohjaa lämmitintä **hystereesillä**: päälle, kun T ≤ tavoite − 0.5 °C; pois, kun T ≥ tavoite + 0.5 °C; välissä pidä nykyinen tila. *Toteutus: kaista on Kconfig-asetus (oletus ± 0.5 °C) ja vertailut ovat tiukat (< ja >). Wokwissa kaista on ± 0.15 °C (prj.conf), koska simuloidun anturin vaihtelu 22.50–22.93 °C ei ylittäisi ± 0.5 °C:n kaistaa.* | Yksi raja kytkisi releen päälle ja pois jatkuvasti, kun lämpötila heiluu rajan kohdalla. Rele kuluisi ja aiheuttaisi häiriöitä. Ks. päätös P2. |
 | F3 | Hälytä (hälytys-LED vilkkuu), jos lämpötila on liian kauan sallitun alueen ulkopuolella. | Lyhyt poikkeama (esim. kannen avaus) ei saa hälyttää turhaan. Arvot: ks. avoimet kysymykset. |
 | F4 | Napin painallus kuittaa hälytyksen. | |
 | F5 | Shell-komennot: `lampo status`, `lampo target <°C>`, `lampo history` (etuliite `lampo`, koska Zephyrillä on oma `history`). | Laitetta voi tutkia ja säätää ilman uudelleenkääntämistä. |
