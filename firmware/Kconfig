@@ -54,4 +54,23 @@ config LAMPO_ALARM_DELAY_MS
 	  ulkopuolella ennen hälytystä (F3). Anturivika hälyttää heti.
 	  Sama aika on kuittauksen torkku.
 
+config LAMPO_SILENCE_MS
+	int "Sensorin hiljaisuus ennen anturivikaa (ms)"
+	default 2500
+	range 500 120000
+	help
+	  Jos sensor-threadista ei kuulu mitään (ei lukemaa eikä vikailmoitusta)
+	  tämän ajan, control tulkitsee anturin vikaantuneeksi (DESIGN.md 4.5).
+	  Pitää olla suurempi kuin lukujakso + DRDY-aikakatkaisu.
+
+config LAMPO_WDT_TIMEOUT_MS
+	int "Vahtikoiran aikaraja (ms)"
+	default 3000
+	range 1500 8000
+	help
+	  Jos control-thread ei ruoki vahtikoiraa tämän ajan sisällä, piiri
+	  käynnistyy uudelleen (F9). control herää vähintään sekunnin välein,
+	  joten 3000 ms jättää kahden kierroksen marginaalin. RP2040:n
+	  vahtikoiran enimmäisaika on noin 8.3 s.
+
 endmenu

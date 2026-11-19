@@ -12,8 +12,31 @@
 #include "hysteresis.h"
 #include "plausibility.h"
 
+/* Onko sensor ollut liian kauan hiljaa? Vähennyslasku uint32_t:nä toimii myös, kun
+ * millisekuntilaskuri pyörähtää ympäri (noin 49 vrk välein), sama keino kuin alarm.c:ssä. */
+static bool sensor_silent(const struct state *s, uint32_t now_ms)
+{
+    return (uint32_t)(now_ms - s->last_heard_ms) > s->silence_ms;
+}
+
+/* Anturivian seuraukset: sama kuin EV_SENSOR_FAULT (F7), mutta kutsutaan myös hiljaisuudesta. */
+static void sensor_fault(struct state *s, uint32_t now_ms)
+{
+    s->heater_on = false;
+    history_add(&s->history, (struct history_entry){
+        .t_ms = now_ms, .centi = 0, .kind = HIST_FAULT });
+    alarm_update(&s->alarm, ALARM_IN_FAULT, now_ms, s->alarm_delay_ms);
+}
+
 struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
 {
+    /* Vaihe 8: hiljaisuus tarkistetaan ENSIN kaikille tapahtumille, jotka eivät tule sensorilta.
+     * Jos tarkistus tehtäisiin vain EV_TICKissä, napin painallukset ja shell-komennot voisivat
+     * herättää controlin juuri ennen aikakatkaisua, eikä tick tulisi koskaan (DESIGN.md 4.5). */
+    if (ev.type != EV_SAMPLE && ev.type != EV_SENSOR_FAULT && sensor_silent(s, now_ms)) {
+        sensor_fault(s, now_ms);
+    }
+
     struct actions act = { .heater_on = false, .alarm_on = false };
 
     /* Mitä hälytykselle kerrotaan. Oletus on vika: jos jokin haara unohtaa asettaa
@@ -23,6 +46,7 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
     switch (ev.type) {
     case EV_SAMPLE: {
         /* Uskottavuus ensin: hystereesi ei saa toimia roskan perusteella. */
+        s->last_heard_ms = now_ms;
         bool ok = plaus_ok(ev.centi, s->have_prev, s->prev_centi);
 
         history_add(&s->history, (struct history_entry){
@@ -50,6 +74,7 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
     }
 
     case EV_SENSOR_FAULT:
+        s->last_heard_ms = now_ms;  /* sensor on hengissä, anturi vain ei vastaa */
         s->heater_on = false;       /* F7 */
         ain = ALARM_IN_FAULT;
         history_add(&s->history, (struct history_entry){
@@ -70,6 +95,10 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
          *     painallusta anturiviaksi ja hälytti. Nappi ei tuo tietoa lämpötilasta, joten
          *     hälytykselle ei kerrota mitään: palataan suoraan muistista.
          */
+        return (struct actions){ .heater_on = s->heater_on, .alarm_on = s->alarm.on };
+
+    case EV_TICK:
+        /* Ei uutta tietoa: hiljaisuus tarkistettiin jo funktion alussa. */
         return (struct actions){ .heater_on = s->heater_on, .alarm_on = s->alarm.on };
 
     case EV_SET_TARGET:

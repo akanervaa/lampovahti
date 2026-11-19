@@ -8,6 +8,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
 
 #include "control.h"
@@ -17,6 +18,7 @@ LOG_MODULE_REGISTER(control, LOG_LEVEL_INF);
 
 #define CONTROL_STACK_SIZE  1024    /* tavuina, mitataan myöhemmin (lesson 91) */
 #define INBOX_DEPTH         8       /* tapahtumaa */
+#define WAKE_MS             1000    /* control herää vähintään näin usein, vaikka postia ei tule */
 #define TARGET_CENTI        2270    /* 22.70 °C: Wokwin MYS-1 kiertää 22.50–22.93, joten LED vaihtuu */
 
 /* Postilaatikko: varataan käännösaikana (ei mallocia). Viestin koko on struct eventin koko,
@@ -39,6 +41,30 @@ static void alarm_blink(struct k_timer *timer)
 }
 
 K_TIMER_DEFINE(alarm_timer, alarm_blink, NULL);
+
+/* Vahtikoira (F9, DESIGN.md 4.5). Laudan devicetree antaa sille aliaksen watchdog0. */
+static const struct device *const wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
+
+/* Käynnistää vahtikoiran. Palauttaa kanavan numeron (>= 0) tai virheen (< 0). */
+static int watchdog_start(void)
+{
+    if (!device_is_ready(wdt)) {
+        return -ENODEV;
+    }
+    struct wdt_timeout_cfg cfg = {
+        .window.min = 0,                        /* ruokkia saa milloin tahansa */
+        .window.max = CONFIG_LAMPO_WDT_TIMEOUT_MS,
+        .callback = NULL,
+        .flags = WDT_FLAG_RESET_SOC,            /* koko piiri: myös GPIO:t nollautuvat → lämmitin pois */
+    };
+    int ch = wdt_install_timeout(wdt, &cfg);
+    if (ch < 0) {
+        return ch;
+    }
+    /* Debuggerin pysäyttäessä vahtikoira pysähtyy, muuten jokainen breakpoint olisi reset. */
+    int rc = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+    return (rc < 0) ? rc : ch;
+}
 
 /* Valokuva shellille. Koko järjestelmän AINOA mutex: se suojaa vain tätä kopiota, ja kumpikin
  * pitää sitä vain kopioinnin ajan (noin 0.5 kt memcpy, mikrosekunteja). */
@@ -92,6 +118,7 @@ static void control_thread(void *p1, void *p2, void *p3)
         .band_centi   = CONFIG_LAMPO_HYST_BAND_CENTI,
         .alarm_range_centi = CONFIG_LAMPO_ALARM_RANGE_CENTI,
         .alarm_delay_ms    = CONFIG_LAMPO_ALARM_DELAY_MS,
+        .silence_ms        = CONFIG_LAMPO_SILENCE_MS,
         .heater_on    = false,          /* sama kuin LEDin lähtötila (INACTIVE) */
     };
     bool heater_was_on = false;
@@ -101,12 +128,27 @@ static void control_thread(void *p1, void *p2, void *p3)
     snap = st;                  /* shell näkee asetukset jo ennen ensimmäistä lukemaa */
     k_mutex_unlock(&snap_lock);
 
+    /* Vahtikoira käynnistetään vasta, kun LEDit ovat turvallisessa tilassa (pois). Jos se ei
+     * käynnisty, jatketaan ilman: laite toimii, mutta toinen turvakerros puuttuu, ja se näkyy
+     * lokissa virheenä. */
+    int wdt_ch = watchdog_start();
+    if (wdt_ch < 0) {
+        LOG_ERR("vahtikoira ei kaynnistynyt (%d)", wdt_ch);
+    } else {
+        LOG_INF("vahtikoira paalla, aikaraja %d ms", CONFIG_LAMPO_WDT_TIMEOUT_MS);
+    }
+
     LOG_INF("control kaynnissa, tavoite %d.%02d C", TARGET_CENTI / 100, TARGET_CENTI % 100);
 
     while (1) {
         struct event ev;
-        /* Vaihe 4: odotetaan ikuisesti. Vaihe 5/8: K_MSEC(2500), jotta hiljaisuus huomataan. */
-        k_msgq_get(&inbox, &ev, K_FOREVER);
+        /* Odotetaan postia enintään WAKE_MS. Jos postia ei tule, decide() saa EV_TICKin: se
+         * tarkistaa, onko sensor hiljaa, ja silmukka ehtii ruokkia vahtikoiran. K_FOREVER
+         * jumittaisi tähän, jos sensor kuolee, ja vahtikoira käynnistäisi laitteen uudelleen
+         * yhä uudestaan ilman hälytystä tai lokia (DESIGN.md 4.5, hylätyt). */
+        if (k_msgq_get(&inbox, &ev, K_MSEC(WAKE_MS)) != 0) {
+            ev = (struct event){ .type = EV_TICK, .centi = 0 };
+        }
 
         /* K3: Miksi tila annetaan osoitteena (&st) mutta tapahtuma arvona (ev)?
          *     Mieti: kumpaa decide() muuttaa, ja minkä muutosten pitää säilyä seuraavaan kertaan?
@@ -134,6 +176,14 @@ static void control_thread(void *p1, void *p2, void *p3)
                 gpio_pin_set_dt(&alarm_led, 0);
             }
             alarm_was_on = act.alarm_on;
+        }
+
+        /* Ruokinta VAIN täällä, kierroksen lopussa: ruokinta todistaa, että koko kierros
+         * (odotus, päätös, LEDit) meni läpi. Erillinen ruokintathread ruokkisi, vaikka tämä
+         * silmukka olisi jumissa (DESIGN.md 4.5, "ruokkijan pitää olla se, jonka toiminta
+         * halutaan todistaa"). */
+        if (wdt_ch >= 0) {
+            wdt_feed(wdt, wdt_ch);
         }
     }
 }

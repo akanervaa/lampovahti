@@ -7,7 +7,11 @@
  * Vaihe 5: lukema tarkistetaan ensin (plausibility.h, F8), sitten lämmitin ohjataan
  * hystereesillä (hysteresis.h). Anturivika ja mahdoton lukema sammuttavat lämmittimen (F7).
  * Hälytys (alarm.h, F3) saa jokaisesta tapahtumasta tiedon: alueella, ulkona vai vika.
- * Jokainen tapahtuma kirjataan historiaan (history.h, F5), myös hylätyt ja viat. Tulossa: uskottavuus, hälytys, historia.
+ * Jokainen tapahtuma kirjataan historiaan (history.h, F5), myös hylätyt ja viat.
+ *
+ * Vaihe 8: hiljainen anturi (DESIGN.md 4.5). Jos sensor-threadista ei ole kuulunut mitään
+ * silence_ms:ään, se tulkitaan anturiviaksi. Tarkistus tehdään JOKAISELLA tapahtumalla, joka ei
+ * tule sensorilta (EV_TICK, nappi, shell), jotta muut tapahtumat eivät peitä hiljaisuutta.
  */
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
@@ -30,6 +34,7 @@ struct state {
     int32_t band_centi;     /* hystereesikaistan leveys, esim. 30 → tavoite ± 0.15 °C */
     int32_t alarm_range_centi;  /* sallittu alue: tavoite ± tämä (F3), esim. 200 = ± 2 °C */
     uint32_t alarm_delay_ms;    /* kuinka kauan poikkeama saa kestää ennen hälytystä (F3) */
+    uint32_t silence_ms;        /* sensorin hiljaisuus, jonka jälkeen anturi on vikaantunut (4.5) */
 
     /* muisti */
     bool heater_on;         /* lämmittimen tila edellisen päätöksen jälkeen */
@@ -37,6 +42,8 @@ struct state {
     int32_t prev_centi;     /* edellinen LUKEMA, myös hylätty (plausibility.h) */
     struct alarm alarm;     /* hälytyksen tila (alarm.h) */
     struct history history; /* viimeisimmät lukemat shellille (history.h, F5) */
+    uint32_t last_heard_ms; /* milloin sensor viimeksi lähetti jotain (lukema tai vika).
+                             * Alussa 0 = käynnistyshetki: jos sensor ei koskaan ala, se huomataan. */
 };
 
 /* Vastauslappu kuorelle. */

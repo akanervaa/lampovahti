@@ -17,6 +17,7 @@
 #define BAND   30
 #define RANGE  200      /* sallittu alue 2070 ... 2470 */
 #define DELAY  30000u
+#define SILENCE 2500u   /* sensorin hiljaisuus, jonka jälkeen anturivika (vaihe 8) */
 
 static struct state s;
 
@@ -24,7 +25,8 @@ void setUp(void)
 {
     /* Ajetaan ennen jokaista testiä: jokainen testi alkaa samasta tilasta. */
     s = (struct state){ .target_centi = TARGET, .band_centi = BAND,
-                        .alarm_range_centi = RANGE, .alarm_delay_ms = DELAY };
+                        .alarm_range_centi = RANGE, .alarm_delay_ms = DELAY,
+                        .silence_ms = SILENCE };
 }
 
 void tearDown(void) {}
@@ -197,6 +199,52 @@ static void test_set_target_waits_for_reading(void)
     TEST_ASSERT_EQUAL(true, decide(&s, ev, 0).heater_on);
 }
 
+/* Vaihe 8: hiljainen anturi (DESIGN.md 4.5). */
+
+static struct actions at(enum event_type type, int32_t centi, uint32_t at_ms)
+{
+    struct event ev = { .type = type, .centi = centi };
+    return decide(&s, ev, at_ms);
+}
+
+/* Raja: tasan 2500 ms hiljaisuutta on vielä ok, 2501 ms on vika. */
+static void test_silence_edge(void)
+{
+    TEST_ASSERT_TRUE(at(EV_SAMPLE, 2200, 0).heater_on);
+    TEST_ASSERT_TRUE(at(EV_TICK, 0, 2500).heater_on);
+    struct actions a = at(EV_TICK, 0, 2501);
+    TEST_ASSERT_FALSE(a.heater_on);
+    TEST_ASSERT_TRUE(a.alarm_on);               /* vika hälyttää heti */
+}
+
+/* DESIGN.md:n esimerkki: napin painallukset eivät peitä hiljaisuutta. */
+static void test_buttons_do_not_hide_silence(void)
+{
+    TEST_ASSERT_TRUE(at(EV_SAMPLE, 2200, 0).heater_on);
+    TEST_ASSERT_TRUE(at(EV_BUTTON, 0, 1000).heater_on);
+    TEST_ASSERT_TRUE(at(EV_BUTTON, 0, 2000).heater_on);
+    TEST_ASSERT_FALSE(at(EV_BUTTON, 0, 3000).heater_on);
+}
+
+/* Sensor ilmoittaa anturiviasta: se on hengissä, joten hiljaisuuslaskenta alkaa alusta. */
+static void test_fault_report_is_not_silence(void)
+{
+    (void)at(EV_SENSOR_FAULT, 0, 2000);
+    size_t before = history_count(&s.history);
+    (void)at(EV_TICK, 0, 4000);                 /* 2000 ms viimeisestä viestistä: ei hiljaisuutta */
+    TEST_ASSERT_EQUAL_size_t(before, history_count(&s.history));
+}
+
+/* Laskurin pyörähdys: viimeinen lukema juuri ennen ympäripyörähdystä. */
+static void test_silence_across_wrap(void)
+{
+    TEST_ASSERT_TRUE(at(EV_SAMPLE, 2200, 0xFFFFF000u).heater_on);   /* 4096 ms ennen pyörähdystä */
+    TEST_ASSERT_TRUE(at(EV_TICK, 0, 0xFFFFF9C4u).heater_on);        /* tasan 2500 ms: ok */
+    /* 4096 + 256 = 4352 ms: vika. Suora vertailu now > last + silence luulisi tätä
+     * hetkeä MENNEISYYDEKSI (0x100 < 0xFFFFF9C4) eikä huomaisi hiljaisuutta. */
+    TEST_ASSERT_FALSE(at(EV_TICK, 0, 0x00000100u).heater_on);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -215,5 +263,9 @@ int main(void)
     RUN_TEST(test_button_keeps_heater);
     RUN_TEST(test_set_target_moves_band);
     RUN_TEST(test_set_target_waits_for_reading);
+    RUN_TEST(test_silence_edge);
+    RUN_TEST(test_buttons_do_not_hide_silence);
+    RUN_TEST(test_fault_report_is_not_silence);
+    RUN_TEST(test_silence_across_wrap);
     return UNITY_END();
 }

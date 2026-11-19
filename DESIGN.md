@@ -321,7 +321,7 @@ Zephyrissä pienempi numero = kiireellisempi.
   shell-komennot herättävät `control`-threadin, jolloin aikakatkaisu ei koskaan laukea, vaikka
   anturi on hiljaa.
 
-**Avoin:** tukeeko Wokwi RP2040:n watchdogia? Testataan ennen toteutusta (ks. avoimet kysymykset).
+**Selvitetty:** Wokwi ajaa vahtikoiran laskuria mutta ei käynnistä piiriä uudelleen (ks. avoimet kysymykset). Toteutus tehty suunnitelman mukaan; reset todennetaan oikealla raudalla.
 
 ### 4.6 Arkkitehtuuri yhdellä silmäyksellä
 
@@ -401,6 +401,7 @@ lampovahti/          oma git-repo (siirretty kurssin reposta 2026-11-18)
 | 5 | ✓ 2026-11-18 | Ydin TDD:llä: hystereesi, uskottavuus, hälytys (myös laskurin pyörähdys), historia; jokainen testi nähty kaatuvan. Wokwissa lämmitin vaihtaa vain kaistan reunoilla (22.50 päälle, 22.93 pois); hälytys todettu tilapäisellä ± 0.10 °C:n alueella. Historia näyttää vain viimeiset 32 tapahtumaa: harvinaisten tapahtumien oma rengas on myöhempi parannus. |
 | 6 | ✓ 2026-11-18 | Nappi GP13 (aktiivinen alhaalla, sisäinen pull-up). ISR vain ajastaa työn; värähtely suodatetaan työjonossa (k_work_reschedule 30 ms, pinni luetaan uudelleen). decide() kuittaa ilman alarm_update()-kutsua: muuten oletus ALARM_IN_FAULT hälytti napista (testi löysi). Wokwissa painallus kuittasi hälytyksen ja se palasi torkun jälkeen. |
 | 7 | ✓ 2026-11-19 | Komennot `lampo status/target/history`. cmd_parse TDD:llä: taulukko + 10 000 edestakaista + 100 000 roskasyötettä kiinteillä siemenillä. Ylivuotosuojan testi löytyi vasta mutaatiolla: "99999999999" hylättiin vahingossa, joten lisättiin "4294967319" (2^32 + 23 → olisi 23.00 °C). Tavoitteen vaihto ei aja hystereesiä: prev_centi voi olla hylätty lukema. Valokuva yhden mutexin takana. Wokwissa kaikki komennot toimivat. |
+| 8 | ✓ 2026-11-19 | Kaksi kerrosta kuten 4.5:ssä. (1) Hiljainen anturi ytimessä: `last_heard_ms` päivittyy lukemasta ja vikailmoituksesta, tarkistus jokaisella muulla tapahtumalla (EV_TICK, nappi, shell); 4 testiä, jokainen nähty kaatuvan mutaatiolla (raja `>`/`>=`, vain tick, laskurin pyörähdys, vikailmoitus ei nollaa). (2) Rautavahtikoira 3000 ms, RESET_SOC, ruokinta vain control-silmukan lopussa; control herää vähintään 1 s välein. Wokwissa vahtikoira käynnistyy ja ruokinta pitää laitteen käynnissä, mutta **uudelleenkäynnistystä ei voi todentaa** (Wokwi ei emuloi sitä, ks. avoimet kysymykset): testattava oikealla Picolla tai Renodessa. Wokwin hiljaisuusraja 20 s (aikavääristymä). |
 
 **Päätös: ajat sovelluksen omina Kconfig-symboleina** (vaihe 3, `firmware/Kconfig`)
 - **Miksi:** Wokwissa Zephyrin aika ja simuloitu anturi eivät kulje samaa tahtia (avoimet

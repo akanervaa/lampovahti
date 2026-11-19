@@ -18,6 +18,8 @@ enum event_type {
                        * centi ei merkitse mitään: decide() ei lue sitä, lähettäjä asettaa 0. */
     EV_BUTTON,        /* kuittausnappia painettiin (F4), värähtely jo suodatettu kuoressa
                        * (firmware/src/button.c). centi ei merkitse mitään, lähettäjä asettaa 0. */
+    EV_TICK,          /* control heräsi aikakatkaisuun ilman postia (vaihe 8). Ei arvoa: decide()
+                       * tarkistaa vain, onko sensor ollut liian kauan hiljaa. */
     EV_SET_TARGET,    /* uusi tavoite shellistä (F5), arvo kentässä centi. Lähettäjä on jo
                        * tarkistanut arvon (core/cmd_parse.c). */
 };
