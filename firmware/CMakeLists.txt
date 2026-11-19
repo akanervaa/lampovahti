@@ -8,6 +8,7 @@ target_sources(app PRIVATE
     src/mys1.c
     src/sensor.c
     src/control.c
+    src/button.c
 )
 
 # Ydin (core/): sama puhdas C, joka testataan PC:llä (tests/). Tässä se käännetään Arm-kääntäjällä.

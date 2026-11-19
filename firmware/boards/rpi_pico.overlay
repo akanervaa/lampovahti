@@ -6,9 +6,11 @@
  *   GP4 = SDA, GP5 = SCL   MYS-1-anturi, I2C-osoite 0x48
  *   GP15                   lämmitin-LED (aktiivinen ylhäällä)
  *   GP14                   hälytys-LED (aktiivinen ylhäällä)
+ *   GP13                   kuittausnappi (aktiivinen alhaalla, sisäinen pull-up)
  */
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 /* P5: Zephyrin rautainen I2C-ajuri ei saa vastausta Wokwissa (aikakatkaisu, error -116).
  * Siksi rautainen väylä kytketään pois ja samat pinnit ohjataan ohjelmallisella gpio-i2c-ajurilla.
@@ -49,6 +51,17 @@
 		};
 		alarm_led: alarm_led {
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/* Kuittausnappi. Nappi kytkee pinnin maahan, joten painettuna pinni on 0 V: siksi
+	 * GPIO_ACTIVE_LOW. Sisäinen pull-up pitää pinnin ylhäällä, kun nappia ei paineta,
+	 * joten ulkoista vastusta ei tarvita. Label ack_button: button.c löytää solmun tällä. */
+	buttons {
+		compatible = "gpio-keys";
+		ack_button: ack_button {
+			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };

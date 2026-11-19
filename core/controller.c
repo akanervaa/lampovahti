@@ -55,6 +55,22 @@ struct actions decide(struct state *s, struct event ev, uint32_t now_ms)
         history_add(&s->history, (struct history_entry){
             .t_ms = now_ms, .centi = 0, .kind = HIST_FAULT });
         break;
+
+    case EV_BUTTON:
+        /* Vaihe 6. Täytä aukko: kumpi funktio kuittaa, alarm_update vai alarm_ack? (alarm.h) */
+        alarm_ack(&s->alarm, now_ms, s->alarm_delay_ms);
+
+        /* K5: Tässä on nyt break, joten suoritus jatkuu alas alarm_update()-kutsuun.
+         *     Aja testit. Yksi napin testeistä kaatuu: miksi? Vihje: mikä on ain:n arvo,
+         *     kun mikään haara ei aseta sitä? Ja tuoko napin painallus uutta tietoa lämpötilasta?
+         *     Korjaus: vaihda break return-lauseeseen, joka palauttaa vastauksen muistista
+         *     ilman alarm_update()-kutsua, samaan tapaan kuin funktion lopussa:
+         *         return (struct actions){ .heater_on = s->heater_on, .alarm_on = s->alarm.on };
+         *     Vastaus: ain on oletuksena ALARM_IN_FAULT, joten alarm_update() luuli napin
+         *     painallusta anturiviaksi ja hälytti. Nappi ei tuo tietoa lämpötilasta, joten
+         *     hälytykselle ei kerrota mitään: palataan suoraan muistista.
+         */
+        return (struct actions){ .heater_on = s->heater_on, .alarm_on = s->alarm.on };
     }
 
     alarm_update(&s->alarm, ain, now_ms, s->alarm_delay_ms);

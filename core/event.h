@@ -16,7 +16,9 @@ enum event_type {
     EV_SAMPLE,        /* uusi lämpötilanäyte, arvo kentässä centi */
     EV_SENSOR_FAULT,  /* anturi ei vastannut tai DRDY ei noussut ajoissa (F7).
                        * centi ei merkitse mitään: decide() ei lue sitä, lähettäjä asettaa 0. */
-    /* Myöhemmin: EV_BUTTON (vaihe 6), EV_SET_TARGET (vaihe 7). */
+    EV_BUTTON,        /* kuittausnappia painettiin (F4), värähtely jo suodatettu kuoressa
+                       * (firmware/src/button.c). centi ei merkitse mitään, lähettäjä asettaa 0. */
+    /* Myöhemmin: EV_SET_TARGET (vaihe 7). */
 };
 
 struct event {

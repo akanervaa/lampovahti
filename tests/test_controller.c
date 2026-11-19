@@ -55,6 +55,12 @@ static bool alarm_after_fault(uint32_t at_ms)
     return decide(&s, ev, at_ms).alarm_on;
 }
 
+static bool alarm_after_button(uint32_t at_ms)
+{
+    struct event ev = { .type = EV_BUTTON, .centi = 0 };
+    return decide(&s, ev, at_ms).alarm_on;
+}
+
 /* Lämpötila nousee ja laskee kaistan läpi. Kaistan sisällä vastaus riippuu
  * siitä, mistä suunnasta tultiin. */
 static void test_hysteresis_remembers_direction(void)
@@ -139,6 +145,32 @@ static void test_history_records_everything(void)
     TEST_ASSERT_EQUAL_UINT32(3000,   history_get(&s.history, 2).t_ms);
 }
 
+/* Vaihe 6: nappi. Täytä odotusarvot ____ (true/false). Säännöt: alarm.h (kuittaus = torkku). */
+
+/* Vika hälyttää, nappi kuittaa, vika jatkuu torkun ajan hiljaa, torkun jälkeen hälytys palaa. */
+static void test_button_acks_alarm(void)
+{
+    TEST_ASSERT_TRUE(alarm_after_fault(0));
+    TEST_ASSERT_EQUAL(false, alarm_after_button(1000));
+    TEST_ASSERT_EQUAL(false, alarm_after_fault(2000));       /* torkku kestää 1000 + 30000 asti */
+    TEST_ASSERT_EQUAL(true, alarm_after_fault(31000));
+}
+
+/* Kaikki kunnossa, joku painaa nappia uteliaisuuttaan. */
+static void test_button_without_alarm_does_nothing(void)
+{
+    TEST_ASSERT_FALSE(alarm_after_sample(2270, 0));
+    TEST_ASSERT_EQUAL(false, alarm_after_button(1000));
+}
+
+/* Nappi ei koske lämmittimeen: se kuittaa vain hälytyksen. */
+static void test_button_keeps_heater(void)
+{
+    TEST_ASSERT_TRUE(sample(2200));         /* alle alarajan 2255: lämmitin päälle */
+    struct event ev = { .type = EV_BUTTON, .centi = 0 };
+    TEST_ASSERT_EQUAL(true, decide(&s, ev, 0).heater_on);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -152,5 +184,8 @@ int main(void)
     RUN_TEST(test_sensor_fault_alarms_immediately);
     RUN_TEST(test_implausible_reading_alarms_immediately);
     RUN_TEST(test_history_records_everything);
+    RUN_TEST(test_button_acks_alarm);
+    RUN_TEST(test_button_without_alarm_does_nothing);
+    RUN_TEST(test_button_keeps_heater);
     return UNITY_END();
 }

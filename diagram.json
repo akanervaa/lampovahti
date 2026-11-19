@@ -55,6 +55,17 @@
         "color": "yellow",
         "label": "Hälytys"
       }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_ack",
+      "top": 230,
+      "left": -150,
+      "attrs": {
+        "color": "blue",
+        "label": "Kuittaus",
+        "key": "k"
+      }
     }
   ],
   "connections": [
@@ -142,6 +153,18 @@
     ],
     [
       "led_alarm:C",
+      "pico:GND.4",
+      "black",
+      []
+    ],
+    [
+      "pico:GP13",
+      "btn_ack:1.r",
+      "blue",
+      []
+    ],
+    [
+      "btn_ack:2.r",
       "pico:GND.4",
       "black",
       []
